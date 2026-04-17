@@ -5,6 +5,15 @@ RTS_INIT_URL: Final = "https://www.realtimestatistics.net/rts/init.php"
 
 TABLE_CACHE_TTL_SECONDS: Final = 1800
 LIVE_CACHE_TTL_SECONDS: Final = 10
+COUNTRY_LOOKUP_CACHE_TTL_SECONDS: Final = 1800
+
+COUNTRY_CODES_SOURCE_PATH: Final = "/country-codes/"
+POPULATION_BY_COUNTRY_SOURCE_PATH: Final = "/world-population/population-by-country/"
+POPULATION_LARGEST_CITIES_SOURCE_PATH: Final = "/population/largest-cities-in-the-world/"
+POPULATION_BY_YEAR_SOURCE_PATH: Final = "/world-population/world-population-by-year/"
+POPULATION_PROJECTIONS_SOURCE_PATH: Final = "/world-population/world-population-projections/"
+GEOGRAPHY_LARGEST_COUNTRIES_SOURCE_PATH: Final = "/geography/largest-countries-in-the-world/"
+GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH: Final = "/geography/how-many-countries-are-there-in-the-world/"
 
 LIVE_COUNTER_MAP: Final[dict[str, dict[str, str]]] = {
     "world_population": {
@@ -89,13 +98,13 @@ LIVE_COUNTER_MAP: Final[dict[str, dict[str, str]]] = {
 }
 
 TABLE_ROUTES: Final[dict[str, tuple[str, int]]] = {
-    "/api/country-codes": ("/country-codes/", 0),
-    "/api/population/countries": ("/world-population/population-by-country/", 0),
-    "/api/population/largest-cities": ("/population/largest-cities-in-the-world/", 0),
-    "/api/population/by-year": ("/world-population/world-population-by-year/", 0),
-    "/api/population/projections": ("/world-population/world-population-projections/", 0),
-    "/api/geography/largest-countries": ("/geography/largest-countries-in-the-world/", 0),
-    "/api/geography/world-countries": ("/geography/how-many-countries-are-there-in-the-world/", 0),
+    "population/country-codes": (COUNTRY_CODES_SOURCE_PATH, 0),
+    "population/countries": (POPULATION_BY_COUNTRY_SOURCE_PATH, 0),
+    "population/largest-cities": (POPULATION_LARGEST_CITIES_SOURCE_PATH, 0),
+    "population/by-year": (POPULATION_BY_YEAR_SOURCE_PATH, 0),
+    "population/projections": (POPULATION_PROJECTIONS_SOURCE_PATH, 0),
+    "geography/largest-countries": (GEOGRAPHY_LARGEST_COUNTRIES_SOURCE_PATH, 0),
+    "geography/world-countries": (GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH, 0),
 }
 
 POPULATION_PERIOD_TABLE_INDEX: Final[dict[str, int]] = {
@@ -153,16 +162,17 @@ ROOT_ROUTES: Final[list[str]] = [
     "/docs",
     "/api",
     "/openapi.json",
-    "/api/live",
-    "/api/country-codes",
-    "/api/population/countries",
-    "/api/population/most-populous?period=current|past|future",
-    "/api/population/largest-cities",
-    "/api/population/by-region?period=current|past|future",
-    "/api/population/by-year",
-    "/api/population/projections",
-    "/api/population/region/{region}?dataset=subregions|historical|forecast",
-    "/api/geography/largest-countries",
-    "/api/geography/world-countries",
-    "/api/geography/region/{region}?dataset=countries|dependencies",
+    "/live",
+    "/population/country-codes",
+    "/population/countries",
+    "/population/most-populous?period=current|past|future",
+    "/population/largest-cities",
+    "/population/by-region?period=current|past|future",
+    "/population/by-year",
+    "/population/projections",
+    "/population/region/{region}?dataset=subregions|historical|forecast",
+    "/population/country/{countryIdentifier}",
+    "/geography/largest-countries",
+    "/geography/world-countries",
+    "/geography/region/{region}?dataset=countries|dependencies",
 ]

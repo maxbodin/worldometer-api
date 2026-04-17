@@ -53,18 +53,21 @@ uv run pywrangler deploy
 - GET `/docs` (OpenAPI HTML docs)
 - GET `/api` (OpenAPI HTML docs)
 - GET `/openapi.json`
-- GET `/api/live`
-- GET `/api/country-codes`
-- GET `/api/population/countries`
-- GET `/api/population/most-populous?period=current|past|future`
-- GET `/api/population/largest-cities`
-- GET `/api/population/by-region?period=current|past|future`
-- GET `/api/population/by-year`
-- GET `/api/population/projections`
-- GET `/api/population/region/{region}?dataset=subregions|historical|forecast`
-- GET `/api/geography/largest-countries`
-- GET `/api/geography/world-countries`
-- GET `/api/geography/region/{region}?dataset=countries|dependencies`
+- GET `/live`
+- GET `/population/country-codes`
+- GET `/population/countries`
+- GET `/population/most-populous?period=current|past|future`
+- GET `/population/largest-cities`
+- GET `/population/by-region?period=current|past|future`
+- GET `/population/by-year`
+- GET `/population/projections`
+- GET `/population/region/{region}?dataset=subregions|historical|forecast`
+- GET `/population/country/{countryIdentifier}`
+- GET `/geography/largest-countries`
+- GET `/geography/world-countries`
+- GET `/geography/region/{region}?dataset=countries|dependencies`
+
+`{countryIdentifier}` accepts a country name, 2-letter ISO alpha code, or 3-letter ISO alpha code.
 
 Supported `{region}` values:
 

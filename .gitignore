@@ -70,3 +70,4 @@ python_modules/
 .DS_Store
 .vscode
 .vscode/settings.json
+__pycache__/

@@ -1,4 +1,4 @@
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from workers import Response
 
@@ -23,38 +23,12 @@ class ApiRouter:
             if path == "/openapi.json":
                 return json_response(build_openapi_spec())
 
-            if path == "/api/live":
+            if path == "/live":
                 return json_response(await self._service.get_live())
 
-            if path in {
-                "/api/country-codes",
-                "/api/population/countries",
-                "/api/population/largest-cities",
-                "/api/population/by-year",
-                "/api/population/projections",
-                "/api/geography/largest-countries",
-                "/api/geography/world-countries",
-            }:
-                return json_response(await self._service.get_table_route(path))
-
-            if path == "/api/population/most-populous":
-                period = query.get("period", ["current"])[0]
-                return json_response(await self._service.get_population_most_populous(period))
-
-            if path == "/api/population/by-region":
-                period = query.get("period", ["current"])[0]
-                return json_response(await self._service.get_population_by_region(period))
-
-            segments = [segment for segment in path.split("/") if segment]
-            if len(segments) == 4 and segments[:3] == ["api", "population", "region"]:
-                region = segments[3]
-                dataset = query.get("dataset", ["subregions"])[0]
-                return json_response(await self._service.get_population_region_dataset(region, dataset))
-
-            if len(segments) == 4 and segments[:3] == ["api", "geography", "region"]:
-                region = segments[3]
-                dataset = query.get("dataset", ["countries"])[0]
-                return json_response(await self._service.get_geography_region_dataset(region, dataset))
+            payload = await self._dispatch_group_route(path, query)
+            if payload is not None:
+                return json_response(payload)
 
             return error_response("Not found", status=404)
 
@@ -64,3 +38,75 @@ class ApiRouter:
             return error_response(str(exc), status=400)
         except Exception as exc:
             return error_response("Internal server error", status=500, details=str(exc))
+
+    async def _dispatch_group_route(
+        self, path: str, query: dict[str, list[str]]
+    ) -> dict[str, object] | None:
+        segments = [segment for segment in path.split("/") if segment]
+        if not segments:
+            return None
+
+        group = segments[0]
+        route_segments = segments[1:]
+
+        if group == "population":
+            return await self._handle_population_routes(route_segments, query)
+
+        if group == "geography":
+            return await self._handle_geography_routes(route_segments, query)
+
+        return None
+
+    async def _handle_population_routes(
+        self, segments: list[str], query: dict[str, list[str]]
+    ) -> dict[str, object] | None:
+        if segments == ["country-codes"]:
+            return await self._service.get_table_route("population/country-codes")
+
+        if segments == ["countries"]:
+            return await self._service.get_table_route("population/countries")
+
+        if segments == ["largest-cities"]:
+            return await self._service.get_table_route("population/largest-cities")
+
+        if segments == ["by-year"]:
+            return await self._service.get_table_route("population/by-year")
+
+        if segments == ["projections"]:
+            return await self._service.get_table_route("population/projections")
+
+        if segments == ["most-populous"]:
+            period = self._query_value(query, "period", "current")
+            return await self._service.get_population_most_populous(period)
+
+        if segments == ["by-region"]:
+            period = self._query_value(query, "period", "current")
+            return await self._service.get_population_by_region(period)
+
+        if len(segments) == 2 and segments[0] == "region":
+            dataset = self._query_value(query, "dataset", "subregions")
+            return await self._service.get_population_region_dataset(segments[1], dataset)
+
+        if len(segments) == 2 and segments[0] == "country":
+            country_identifier = unquote(segments[1])
+            return await self._service.get_population_country(country_identifier)
+
+        return None
+
+    async def _handle_geography_routes(
+        self, segments: list[str], query: dict[str, list[str]]
+    ) -> dict[str, object] | None:
+        if segments == ["largest-countries"]:
+            return await self._service.get_table_route("geography/largest-countries")
+
+        if segments == ["world-countries"]:
+            return await self._service.get_table_route("geography/world-countries")
+
+        if len(segments) == 2 and segments[0] == "region":
+            dataset = self._query_value(query, "dataset", "countries")
+            return await self._service.get_geography_region_dataset(segments[1], dataset)
+
+        return None
+
+    def _query_value(self, query: dict[str, list[str]], key: str, default: str) -> str:
+        return query.get(key, [default])[0]

@@ -5,10 +5,13 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 
-def normalize_header(text: str) -> str:
+def _normalize_ascii(text: str) -> str:
     normalized = unicodedata.normalize("NFKD", text)
-    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
-    ascii_text = ascii_text.lower().strip()
+    return normalized.encode("ascii", "ignore").decode("ascii").lower().strip()
+
+
+def normalize_header(text: str) -> str:
+    ascii_text = _normalize_ascii(text)
     ascii_text = ascii_text.replace("%", " percent ").replace("#", " rank ")
     ascii_text = re.sub(r"\([^)]*\)", " ", ascii_text)
     ascii_text = re.sub(r"[^a-z0-9]+", "_", ascii_text)
@@ -21,6 +24,11 @@ def normalize_header(text: str) -> str:
         return f"col_{ascii_text}"
 
     return ascii_text
+
+
+def normalize_lookup_key(text: str) -> str:
+    ascii_text = _normalize_ascii(text)
+    return re.sub(r"[^a-z0-9]+", "", ascii_text)
 
 
 def parse_cell(text: str) -> Any:
@@ -89,3 +97,34 @@ def parse_html_tables(html: str) -> list[list[dict[str, Any]]]:
         parsed_tables.append(rows)
 
     return parsed_tables
+
+
+def parse_population_country_links(html: str) -> dict[str, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    if table is None:
+        return {}
+
+    country_links: dict[str, str] = {}
+    for row in table.find_all("tr"):
+        cells = row.find_all("td")
+        if len(cells) < 2:
+            continue
+
+        country_cell = cells[1]
+        country_name = country_cell.get_text(" ", strip=True)
+        link = country_cell.find("a", href=True)
+
+        if not country_name or link is None:
+            continue
+
+        href = str(link["href"]).strip()
+        if not href:
+            continue
+
+        if not href.startswith("/"):
+            href = f"/{href}"
+
+        country_links[country_name] = href
+
+    return country_links

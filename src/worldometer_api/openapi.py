@@ -39,7 +39,7 @@ def build_openapi_spec() -> dict[str, Any]:
                     "responses": {"200": {"description": "OpenAPI document"}},
                 }
             },
-            "/api/live": {
+            "/live": {
                 "get": {
                     "summary": "Live counters",
                     "responses": {
@@ -49,14 +49,49 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
-            "/api/country-codes": {"get": {"summary": "Country codes", "responses": {"200": {"description": "Country codes table"}}}},
-            "/api/population/countries": {"get": {"summary": "Countries by population", "responses": {"200": {"description": "Population-by-country table"}}}},
-            "/api/population/largest-cities": {"get": {"summary": "Largest cities", "responses": {"200": {"description": "Largest cities table"}}}},
-            "/api/population/by-year": {"get": {"summary": "Population by year", "responses": {"200": {"description": "Historical world population table"}}}},
-            "/api/population/projections": {"get": {"summary": "Population projections", "responses": {"200": {"description": "Projected world population table"}}}},
-            "/api/geography/largest-countries": {"get": {"summary": "Largest countries", "responses": {"200": {"description": "Largest countries table"}}}},
-            "/api/geography/world-countries": {"get": {"summary": "World countries", "responses": {"200": {"description": "World countries table"}}}},
-            "/api/population/most-populous": {
+            "/population/country-codes": {
+                "get": {
+                    "summary": "Country codes",
+                    "responses": {"200": {"description": "Country codes table"}},
+                }
+            },
+            "/population/countries": {
+                "get": {
+                    "summary": "Countries by population",
+                    "responses": {"200": {"description": "Population-by-country table"}},
+                }
+            },
+            "/population/largest-cities": {
+                "get": {
+                    "summary": "Largest cities",
+                    "responses": {"200": {"description": "Largest cities table"}},
+                }
+            },
+            "/population/by-year": {
+                "get": {
+                    "summary": "Population by year",
+                    "responses": {"200": {"description": "Historical world population table"}},
+                }
+            },
+            "/population/projections": {
+                "get": {
+                    "summary": "Population projections",
+                    "responses": {"200": {"description": "Projected world population table"}},
+                }
+            },
+            "/geography/largest-countries": {
+                "get": {
+                    "summary": "Largest countries",
+                    "responses": {"200": {"description": "Largest countries table"}},
+                }
+            },
+            "/geography/world-countries": {
+                "get": {
+                    "summary": "World countries",
+                    "responses": {"200": {"description": "World countries table"}},
+                }
+            },
+            "/population/most-populous": {
                 "get": {
                     "summary": "Most populous countries",
                     "parameters": [
@@ -70,7 +105,7 @@ def build_openapi_spec() -> dict[str, Any]:
                     "responses": {"200": {"description": "Most populous countries data by period"}, "400": {"description": "Invalid period"}},
                 }
             },
-            "/api/population/by-region": {
+            "/population/by-region": {
                 "get": {
                     "summary": "Population by region",
                     "parameters": [
@@ -84,7 +119,7 @@ def build_openapi_spec() -> dict[str, Any]:
                     "responses": {"200": {"description": "Population by region and period"}, "400": {"description": "Invalid period"}},
                 }
             },
-            "/api/population/region/{region}": {
+            "/population/region/{region}": {
                 "get": {
                     "summary": "Region-specific population datasets",
                     "parameters": [
@@ -122,7 +157,30 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
-            "/api/geography/region/{region}": {
+            "/population/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "Country population data",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "afghanistan"},
+                                "alpha2": {"value": "AF"},
+                                "alpha3": {"value": "AFG"},
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Country population datasets parsed from country page"},
+                        "404": {"description": "Country not found"},
+                    },
+                }
+            },
+            "/geography/region/{region}": {
                 "get": {
                     "summary": "Region-specific geography datasets",
                     "parameters": [
