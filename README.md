@@ -47,6 +47,19 @@ uv run pywrangler dev
 uv run pywrangler deploy
 ```
 
+## End-to-end tests
+
+The e2e suite exercises every public API route with real HTTP calls and real upstream data.
+
+```bash
+uv run pytest tests/e2e -m e2e
+```
+
+Optional environment variables:
+
+- `E2E_BASE_URL` (default: `http://127.0.0.1:8787`)
+- `E2E_START_SERVER` (`1`/`0`, default: `1`)
+
 ## API routes
 
 - GET `/` (OpenAPI HTML docs)

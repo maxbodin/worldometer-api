@@ -9,4 +9,9 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["workers-py", "workers-runtime-sdk"]
+dev = [
+    "workers-py",
+    "workers-runtime-sdk",
+    "pytest>=8.3.0",
+    "httpx>=0.28.0",
+]
