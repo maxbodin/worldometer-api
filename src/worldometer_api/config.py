@@ -15,6 +15,8 @@ POPULATION_PROJECTIONS_SOURCE_PATH: Final = "/world-population/world-population-
 GEOGRAPHY_LARGEST_COUNTRIES_SOURCE_PATH: Final = "/geography/largest-countries-in-the-world/"
 GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH: Final = "/geography/how-many-countries-are-there-in-the-world/"
 ENERGY_OVERVIEW_SOURCE_PATH: Final = "/energy/"
+WATER_OVERVIEW_SOURCE_PATH: Final = "/water/"
+WATER_COUNTRY_SOURCE_TEMPLATE: Final = "/water/{country_slug}-water/"
 
 ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES: Final[dict[str, str]] = {
     "energy": "/energy/{country_slug}-energy/",
@@ -124,6 +126,7 @@ TABLE_ROUTES: Final[dict[str, tuple[str, int]]] = {
     "geography/largest-countries": (GEOGRAPHY_LARGEST_COUNTRIES_SOURCE_PATH, 0),
     "geography/world-countries": (GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH, 0),
     "energy/overview": (ENERGY_OVERVIEW_SOURCE_PATH, 0),
+    "water/overview": (WATER_OVERVIEW_SOURCE_PATH, 0),
 }
 
 POPULATION_PERIOD_TABLE_INDEX: Final[dict[str, int]] = {
@@ -196,4 +199,6 @@ ROOT_ROUTES: Final[list[str]] = [
     "/geography/region/{region}?dataset=countries|dependencies",
     "/energy",
     "/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal",
+    "/water",
+    "/water/country/{countryIdentifier}",
 ]

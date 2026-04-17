@@ -58,6 +58,9 @@ class ApiRouter:
         if group == "energy":
             return await self._handle_energy_routes(route_segments, query)
 
+        if group == "water":
+            return await self._handle_water_routes(route_segments, query)
+
         return None
 
     async def _handle_population_routes(
@@ -121,6 +124,18 @@ class ApiRouter:
             country_identifier = unquote(segments[1])
             dataset = self._query_value(query, "dataset", "all")
             return await self._service.get_energy_country(country_identifier, dataset)
+
+        return None
+
+    async def _handle_water_routes(
+        self, segments: list[str], query: dict[str, list[str]]
+    ) -> dict[str, object] | None:
+        if not segments:
+            return await self._service.get_table_route("water/overview")
+
+        if len(segments) == 2 and segments[0] == "country":
+            country_identifier = unquote(segments[1])
+            return await self._service.get_water_country(country_identifier)
 
         return None
 

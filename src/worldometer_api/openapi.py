@@ -6,15 +6,7 @@ SCALAR_API_REFERENCE_JS_URL = "https://cdn.jsdelivr.net/npm/@scalar/api-referenc
 
 
 def build_openapi_spec() -> dict[str, Any]:
-    return {
-        "openapi": "3.1.0",
-        "info": {
-            "title": "Worldometer API",
-            "version": "1.0.0",
-            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, and energy worldometer data.",
-        },
-        "servers": [{"url": "/"}],
-        "paths": {
+    paths: dict[str, dict[str, Any]] = {
             "/": {
                 "get": {
                     "summary": "OpenAPI documentation page",
@@ -95,6 +87,12 @@ def build_openapi_spec() -> dict[str, Any]:
                 "get": {
                     "summary": "Energy consumption by country",
                     "responses": {"200": {"description": "Energy consumption table"}},
+                }
+            },
+            "/water": {
+                "get": {
+                    "summary": "Water use by country",
+                    "responses": {"200": {"description": "Water use table by country"}},
                 }
             },
             "/population/most-populous": {
@@ -220,6 +218,31 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
+            "/water/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "Country water datasets",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "afghanistan"},
+                                "alpha2": {"value": "AF"},
+                                "alpha3": {"value": "AFG"},
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Country water sections parsed from source page"
+                        },
+                        "404": {"description": "Country not found"},
+                    },
+                }
+            },
             "/geography/region/{region}": {
                 "get": {
                     "summary": "Region-specific geography datasets",
@@ -258,8 +281,56 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
+        }
+
+    _attach_operation_tags(paths)
+
+    return {
+        "openapi": "3.1.0",
+        "info": {
+            "title": "Worldometer API",
+            "version": "1.0.0",
+            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, energy, and water worldometer data.",
         },
+        "servers": [{"url": "/"}],
+        "tags": _build_openapi_tags(),
+        "paths": paths,
     }
+
+
+def _build_openapi_tags() -> list[dict[str, str]]:
+    return [
+        {"name": "docs", "description": "Documentation and OpenAPI routes"},
+        {"name": "live", "description": "Real-time counters"},
+        {"name": "population", "description": "Population routes"},
+        {"name": "geography", "description": "Geography routes"},
+        {"name": "energy", "description": "Energy routes"},
+        {"name": "water", "description": "Water routes"},
+    ]
+
+
+def _infer_tag_for_path(path: str) -> str:
+    if path in {"/", "/docs", "/api", "/openapi.json"}:
+        return "docs"
+    if path == "/live":
+        return "live"
+    if path.startswith("/population/"):
+        return "population"
+    if path.startswith("/geography/"):
+        return "geography"
+    if path.startswith("/energy"):
+        return "energy"
+    if path.startswith("/water"):
+        return "water"
+    return "docs"
+
+
+def _attach_operation_tags(paths: dict[str, dict[str, Any]]) -> None:
+    for path, operations in paths.items():
+        tag = _infer_tag_for_path(path)
+        for operation in operations.values():
+            if isinstance(operation, dict):
+                operation.setdefault("tags", [tag])
 
 
 def build_docs_html(spec_path: str = "/openapi.json") -> str:

@@ -12,12 +12,14 @@ from .config import (
     REGION_POPULATION_DATASET_INDEX,
     REGION_POPULATION_PATHS,
     TABLE_ROUTES,
+    WATER_COUNTRY_SOURCE_TEMPLATE,
 )
 from .energy_parser import parse_energy_country_summary
 from .fetcher import fetch_text
 from .live_counters_service import LiveCountersService
 from .population_country_resolver import PopulationCountryResolver
 from .table_service import TableService
+from .water_parser import parse_water_country_summary
 
 
 class WorldometerApiService:
@@ -93,6 +95,25 @@ class WorldometerApiService:
             "dataset": dataset_key,
             "dataset_count": len(datasets),
             "datasets": datasets,
+        }
+
+    async def get_water_country(self, country_identifier: str) -> dict[str, Any]:
+        match = await self._population_country_resolver.resolve(country_identifier)
+        source_path = WATER_COUNTRY_SOURCE_TEMPLATE.format(country_slug=match.country_slug)
+
+        html = await fetch_text(f"{BASE_URL}{source_path}")
+        parsed_payload = parse_water_country_summary(html)
+        if not parsed_payload:
+            raise LookupError(f"Water dataset is not available for country: {match.country}")
+
+        return {
+            "country": match.country,
+            "country_identifier": country_identifier,
+            "matched_by": match.matched_by,
+            "country_slug": match.country_slug,
+            "source_path": source_path,
+            "source_url": f"{BASE_URL}{source_path}",
+            **parsed_payload,
         }
 
     async def get_population_most_populous(self, period: str) -> dict[str, Any]:

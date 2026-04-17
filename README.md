@@ -9,6 +9,7 @@ This project exposes Worker routes for:
 - Population data (current, historical, projected)
 - Geography data
 - Energy data
+- Water data
 
 ## Architecture
 
@@ -19,6 +20,8 @@ The codebase is split into single-responsibility modules under `src/worldometer_
 - `live_counters_service.py`: realtime counters decoding and evaluation
 - `table_service.py`: table fetching and cache-aware retrieval
 - `table_parser.py`: HTML table normalization/parsing
+- `energy_parser.py`: country energy summary parsing
+- `water_parser.py`: country water summary parsing
 - `cache.py`: TTL cache implementation
 - `openapi.py`: OpenAPI spec and docs page generator
 - `http.py`: HTTP response helpers
@@ -88,6 +91,8 @@ Optional environment variables:
 - GET `/geography/region/{region}?dataset=countries|dependencies`
 - GET `/energy`
 - GET `/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal`
+- GET `/water`
+- GET `/water/country/{countryIdentifier}`
 
 `{countryIdentifier}` accepts a country name, 2-letter ISO alpha code, or 3-letter ISO alpha code.
 
