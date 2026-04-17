@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "purple-moon-9fe9",
+	"name": "worldometer-api",
 	"main": "src/entry.py",
 	"compatibility_date": "2026-04-17",
 	"compatibility_flags": [
