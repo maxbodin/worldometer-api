@@ -14,6 +14,24 @@ POPULATION_BY_YEAR_SOURCE_PATH: Final = "/world-population/world-population-by-y
 POPULATION_PROJECTIONS_SOURCE_PATH: Final = "/world-population/world-population-projections/"
 GEOGRAPHY_LARGEST_COUNTRIES_SOURCE_PATH: Final = "/geography/largest-countries-in-the-world/"
 GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH: Final = "/geography/how-many-countries-are-there-in-the-world/"
+ENERGY_OVERVIEW_SOURCE_PATH: Final = "/energy/"
+
+ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES: Final[dict[str, str]] = {
+    "energy": "/energy/{country_slug}-energy/",
+    "electricity": "/electricity/{country_slug}-electricity/",
+    "gas": "/gas/{country_slug}-natural-gas/",
+    "oil": "/oil/{country_slug}-oil/",
+    "coal": "/coal/{country_slug}-coal/",
+}
+
+ENERGY_COUNTRY_DATASET_CHOICES: Final[dict[str, int]] = {
+    "all": 0,
+    "energy": 1,
+    "electricity": 2,
+    "gas": 3,
+    "oil": 4,
+    "coal": 5,
+}
 
 LIVE_COUNTER_MAP: Final[dict[str, dict[str, str]]] = {
     "world_population": {
@@ -105,6 +123,7 @@ TABLE_ROUTES: Final[dict[str, tuple[str, int]]] = {
     "population/projections": (POPULATION_PROJECTIONS_SOURCE_PATH, 0),
     "geography/largest-countries": (GEOGRAPHY_LARGEST_COUNTRIES_SOURCE_PATH, 0),
     "geography/world-countries": (GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH, 0),
+    "energy/overview": (ENERGY_OVERVIEW_SOURCE_PATH, 0),
 }
 
 POPULATION_PERIOD_TABLE_INDEX: Final[dict[str, int]] = {
@@ -175,4 +194,6 @@ ROOT_ROUTES: Final[list[str]] = [
     "/geography/largest-countries",
     "/geography/world-countries",
     "/geography/region/{region}?dataset=countries|dependencies",
+    "/energy",
+    "/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal",
 ]

@@ -11,7 +11,7 @@ def build_openapi_spec() -> dict[str, Any]:
         "info": {
             "title": "Worldometer API",
             "version": "1.0.0",
-            "description": "Lightweight Cloudflare Worker API exposing live, geography, and population worldometer data.",
+            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, and energy worldometer data.",
         },
         "servers": [{"url": "/"}],
         "paths": {
@@ -89,6 +89,12 @@ def build_openapi_spec() -> dict[str, Any]:
                 "get": {
                     "summary": "World countries",
                     "responses": {"200": {"description": "World countries table"}},
+                }
+            },
+            "/energy": {
+                "get": {
+                    "summary": "Energy consumption by country",
+                    "responses": {"200": {"description": "Energy consumption table"}},
                 }
             },
             "/population/most-populous": {
@@ -177,6 +183,40 @@ def build_openapi_spec() -> dict[str, Any]:
                     "responses": {
                         "200": {"description": "Country population datasets parsed from country page"},
                         "404": {"description": "Country not found"},
+                    },
+                }
+            },
+            "/energy/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "Country energy datasets",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "china"},
+                                "alpha2": {"value": "CN"},
+                                "alpha3": {"value": "CHN"},
+                            },
+                        },
+                        {
+                            "name": "dataset",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["all", "energy", "electricity", "gas", "oil", "coal"],
+                                "default": "all",
+                            },
+                        },
+                    ],
+                    "responses": {
+                        "200": {"description": "Country energy datasets parsed from source pages"},
+                        "400": {"description": "Invalid dataset"},
+                        "404": {"description": "Country or dataset not found"},
                     },
                 }
             },

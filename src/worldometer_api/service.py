@@ -3,6 +3,8 @@ from typing import Any
 from .cache import TTLCache
 from .config import (
     BASE_URL,
+    ENERGY_COUNTRY_DATASET_CHOICES,
+    ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES,
     GEOGRAPHY_REGION_DATASET_INDEX,
     POPULATION_PERIOD_TABLE_INDEX,
     REGION_ALIASES,
@@ -11,6 +13,8 @@ from .config import (
     REGION_POPULATION_PATHS,
     TABLE_ROUTES,
 )
+from .energy_parser import parse_energy_country_summary
+from .fetcher import fetch_text
 from .live_counters_service import LiveCountersService
 from .population_country_resolver import PopulationCountryResolver
 from .table_service import TableService
@@ -57,6 +61,38 @@ class WorldometerApiService:
                 }
                 for index, rows in enumerate(tables)
             ],
+        }
+
+    async def get_energy_country(self, country_identifier: str, dataset: str) -> dict[str, Any]:
+        match = await self._population_country_resolver.resolve(country_identifier)
+        dataset_key = self._validate_choice(dataset, ENERGY_COUNTRY_DATASET_CHOICES, "dataset")
+
+        if dataset_key == "all":
+            dataset_keys = list(ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES.keys())
+        else:
+            dataset_keys = [dataset_key]
+
+        datasets: list[dict[str, Any]] = []
+        for current_dataset in dataset_keys:
+            source_path = ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES[current_dataset].format(
+                country_slug=match.country_slug
+            )
+            datasets.append(
+                await self._get_energy_country_dataset_payload(
+                    dataset_key=current_dataset,
+                    source_path=source_path,
+                    country_name=match.country,
+                )
+            )
+
+        return {
+            "country": match.country,
+            "country_identifier": country_identifier,
+            "matched_by": match.matched_by,
+            "country_slug": match.country_slug,
+            "dataset": dataset_key,
+            "dataset_count": len(datasets),
+            "datasets": datasets,
         }
 
     async def get_population_most_populous(self, period: str) -> dict[str, Any]:
@@ -116,6 +152,56 @@ class WorldometerApiService:
     def _normalize_region(self, region: str) -> str:
         normalized = region.strip().lower().replace("_", "-")
         return REGION_ALIASES.get(normalized, normalized)
+
+    async def _get_energy_country_dataset_payload(
+        self,
+        dataset_key: str,
+        source_path: str,
+        country_name: str,
+    ) -> dict[str, Any]:
+        try:
+            if dataset_key == "energy":
+                html = await fetch_text(f"{BASE_URL}{source_path}")
+                rows = parse_energy_country_summary(html)
+                if not rows:
+                    raise LookupError(
+                        f"Energy dataset '{dataset_key}' is not available for country: {country_name}"
+                    )
+
+                tables = [
+                    {
+                        "index": 0,
+                        "count": len(rows),
+                        "rows": rows,
+                    }
+                ]
+            else:
+                raw_tables = await self._table_service.get_tables(source_path)
+                if not raw_tables:
+                    raise LookupError(
+                        f"Energy dataset '{dataset_key}' is not available for country: {country_name}"
+                    )
+
+                tables = [
+                    {
+                        "index": index,
+                        "count": len(rows),
+                        "rows": rows,
+                    }
+                    for index, rows in enumerate(raw_tables)
+                ]
+
+            return {
+                "dataset": dataset_key,
+                "source_path": source_path,
+                "source_url": f"{BASE_URL}{source_path}",
+                "table_count": len(tables),
+                "tables": tables,
+            }
+        except ValueError as exc:
+            raise LookupError(
+                f"Energy dataset '{dataset_key}' is not available for country: {country_name}"
+            ) from exc
 
     def _validate_choice(self, value: str, mapping: dict[str, int], field_name: str) -> str:
         key = value.strip().lower()

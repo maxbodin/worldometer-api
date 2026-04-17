@@ -18,6 +18,13 @@ class PopulationCountryMatch:
     source_path: str
     matched_by: str
 
+    @property
+    def country_slug(self) -> str:
+        source_slug = self.source_path.rstrip("/").split("/")[-1]
+        if source_slug.endswith("-population"):
+            return source_slug[: -len("-population")]
+        return source_slug
+
 
 class PopulationCountryResolver:
     def __init__(self, table_service: TableService, cache: TTLCache) -> None:

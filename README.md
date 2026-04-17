@@ -8,6 +8,7 @@ This project exposes Worker routes for:
 - Country codes
 - Population data (current, historical, projected)
 - Geography data
+- Energy data
 
 ## Architecture
 
@@ -33,6 +34,12 @@ The codebase is split into single-responsibility modules under `src/worldometer_
 
 ```bash
 uv sync
+```
+
+Or use:
+
+```bash
+make install
 ```
 
 ## Local development
@@ -79,6 +86,8 @@ Optional environment variables:
 - GET `/geography/largest-countries`
 - GET `/geography/world-countries`
 - GET `/geography/region/{region}?dataset=countries|dependencies`
+- GET `/energy`
+- GET `/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal`
 
 `{countryIdentifier}` accepts a country name, 2-letter ISO alpha code, or 3-letter ISO alpha code.
 
