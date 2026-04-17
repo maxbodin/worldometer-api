@@ -128,3 +128,61 @@ def parse_population_country_links(html: str) -> dict[str, str]:
         country_links[country_name] = href
 
     return country_links
+
+
+def parse_country_source_index(html: str, href_prefix: str) -> dict[str, tuple[str, str]]:
+    soup = BeautifulSoup(html, "html.parser")
+    index: dict[str, tuple[str, str]] = {}
+
+    for row in soup.find_all("tr"):
+        cells = row.find_all("td")
+        if len(cells) < 2:
+            continue
+
+        country_name = cells[1].get_text(" ", strip=True)
+        if not country_name:
+            continue
+
+        link = None
+        for candidate in row.find_all("a", href=True):
+            href = str(candidate["href"]).strip()
+            if href.startswith(href_prefix):
+                link = href
+                break
+
+        if link is None:
+            continue
+
+        source_path = link.split("#", 1)[0].split("?", 1)[0].strip()
+        if not source_path:
+            continue
+
+        if not source_path.startswith("/"):
+            source_path = f"/{source_path}"
+
+        key_variants: list[str] = []
+        normalized_name = normalize_lookup_key(country_name)
+        if normalized_name:
+            key_variants.append(normalized_name)
+
+        row_id = row.get("id")
+        if isinstance(row_id, str):
+            normalized_row_id = normalize_lookup_key(row_id)
+            if normalized_row_id:
+                key_variants.append(normalized_row_id)
+
+        slug = source_path.rstrip("/").split("/")[-1]
+        normalized_slug = normalize_lookup_key(slug)
+        if normalized_slug:
+            key_variants.append(normalized_slug)
+
+        for suffix in ("-gdp", "-food-agriculture"):
+            if slug.endswith(suffix):
+                normalized_without_suffix = normalize_lookup_key(slug[: -len(suffix)])
+                if normalized_without_suffix:
+                    key_variants.append(normalized_without_suffix)
+
+        for key in key_variants:
+            index.setdefault(key, (country_name, source_path))
+
+    return index

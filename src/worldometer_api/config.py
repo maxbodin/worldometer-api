@@ -17,6 +17,12 @@ GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH: Final = "/geography/how-many-countries-ar
 ENERGY_OVERVIEW_SOURCE_PATH: Final = "/energy/"
 WATER_OVERVIEW_SOURCE_PATH: Final = "/water/"
 WATER_COUNTRY_SOURCE_TEMPLATE: Final = "/water/{country_slug}-water/"
+GDP_BY_COUNTRY_SOURCE_PATH: Final = "/gdp/gdp-by-country/"
+GDP_PER_CAPITA_SOURCE_PATH: Final = "/gdp/gdp-per-capita/"
+FOOD_AGRICULTURE_UNDERNOURISHMENT_SOURCE_PATH: Final = "/undernourishment/"
+FOOD_AGRICULTURE_FOREST_SOURCE_PATH: Final = "/food-agriculture/forest-by-country/"
+FOOD_AGRICULTURE_CROPLAND_SOURCE_PATH: Final = "/food-agriculture/cropland-by-country/"
+FOOD_AGRICULTURE_PESTICIDES_SOURCE_PATH: Final = "/food-agriculture/pesticides-by-country/"
 
 ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES: Final[dict[str, str]] = {
     "energy": "/energy/{country_slug}-energy/",
@@ -34,6 +40,30 @@ ENERGY_COUNTRY_DATASET_CHOICES: Final[dict[str, int]] = {
     "oil": 4,
     "coal": 5,
 }
+
+GDP_DATASET_CHOICES: Final[dict[str, int]] = {
+    "by-country": 0,
+    "per-capita": 1,
+}
+
+FOOD_AGRICULTURE_DATASET_CHOICES: Final[dict[str, int]] = {
+    "undernourishment": 0,
+    "forest": 1,
+    "cropland": 2,
+    "pesticides": 3,
+}
+
+GDP_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
+    GDP_BY_COUNTRY_SOURCE_PATH,
+    GDP_PER_CAPITA_SOURCE_PATH,
+]
+
+FOOD_AGRICULTURE_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
+    FOOD_AGRICULTURE_UNDERNOURISHMENT_SOURCE_PATH,
+    FOOD_AGRICULTURE_FOREST_SOURCE_PATH,
+    FOOD_AGRICULTURE_CROPLAND_SOURCE_PATH,
+    FOOD_AGRICULTURE_PESTICIDES_SOURCE_PATH,
+]
 
 LIVE_COUNTER_MAP: Final[dict[str, dict[str, str]]] = {
     "world_population": {
@@ -127,6 +157,12 @@ TABLE_ROUTES: Final[dict[str, tuple[str, int]]] = {
     "geography/world-countries": (GEOGRAPHY_WORLD_COUNTRIES_SOURCE_PATH, 0),
     "energy/overview": (ENERGY_OVERVIEW_SOURCE_PATH, 0),
     "water/overview": (WATER_OVERVIEW_SOURCE_PATH, 0),
+    "gdp/by-country": (GDP_BY_COUNTRY_SOURCE_PATH, 0),
+    "gdp/per-capita": (GDP_PER_CAPITA_SOURCE_PATH, 0),
+    "food-agriculture/undernourishment": (FOOD_AGRICULTURE_UNDERNOURISHMENT_SOURCE_PATH, 0),
+    "food-agriculture/forest": (FOOD_AGRICULTURE_FOREST_SOURCE_PATH, 0),
+    "food-agriculture/cropland": (FOOD_AGRICULTURE_CROPLAND_SOURCE_PATH, 0),
+    "food-agriculture/pesticides": (FOOD_AGRICULTURE_PESTICIDES_SOURCE_PATH, 0),
 }
 
 POPULATION_PERIOD_TABLE_INDEX: Final[dict[str, int]] = {
@@ -201,4 +237,14 @@ ROOT_ROUTES: Final[list[str]] = [
     "/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal",
     "/water",
     "/water/country/{countryIdentifier}",
+    "/gdp?dataset=by-country|per-capita",
+    "/gdp/by-country",
+    "/gdp/per-capita",
+    "/gdp/country/{countryIdentifier}",
+    "/food-agriculture?dataset=undernourishment|forest|cropland|pesticides",
+    "/food-agriculture/undernourishment",
+    "/food-agriculture/forest",
+    "/food-agriculture/cropland",
+    "/food-agriculture/pesticides",
+    "/food-agriculture/country/{countryIdentifier}",
 ]

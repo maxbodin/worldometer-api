@@ -61,6 +61,12 @@ class ApiRouter:
         if group == "water":
             return await self._handle_water_routes(route_segments, query)
 
+        if group == "gdp":
+            return await self._handle_gdp_routes(route_segments, query)
+
+        if group == "food-agriculture":
+            return await self._handle_food_agriculture_routes(route_segments, query)
+
         return None
 
     async def _handle_population_routes(
@@ -136,6 +142,46 @@ class ApiRouter:
         if len(segments) == 2 and segments[0] == "country":
             country_identifier = unquote(segments[1])
             return await self._service.get_water_country(country_identifier)
+
+        return None
+
+    async def _handle_gdp_routes(
+        self, segments: list[str], query: dict[str, list[str]]
+    ) -> dict[str, object] | None:
+        if not segments:
+            dataset = self._query_value(query, "dataset", "by-country")
+            return await self._service.get_gdp_overview(dataset)
+
+        if segments == ["by-country"]:
+            return await self._service.get_gdp_overview("by-country")
+
+        if segments == ["per-capita"]:
+            return await self._service.get_gdp_overview("per-capita")
+
+        if len(segments) == 2 and segments[0] == "country":
+            country_identifier = unquote(segments[1])
+            return await self._service.get_gdp_country(country_identifier)
+
+        return None
+
+    async def _handle_food_agriculture_routes(
+        self, segments: list[str], query: dict[str, list[str]]
+    ) -> dict[str, object] | None:
+        if not segments:
+            dataset = self._query_value(query, "dataset", "undernourishment")
+            return await self._service.get_food_agriculture_overview(dataset)
+
+        if len(segments) == 1 and segments[0] in {
+            "undernourishment",
+            "forest",
+            "cropland",
+            "pesticides",
+        }:
+            return await self._service.get_food_agriculture_overview(segments[0])
+
+        if len(segments) == 2 and segments[0] == "country":
+            country_identifier = unquote(segments[1])
+            return await self._service.get_food_agriculture_country(country_identifier)
 
         return None
 

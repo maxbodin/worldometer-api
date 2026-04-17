@@ -33,6 +33,16 @@ def test_openapi_spec_contains_expected_routes(base_url: str) -> None:
         "/energy/country/{countryIdentifier}",
         "/water",
         "/water/country/{countryIdentifier}",
+        "/gdp",
+        "/gdp/by-country",
+        "/gdp/per-capita",
+        "/gdp/country/{countryIdentifier}",
+        "/food-agriculture",
+        "/food-agriculture/undernourishment",
+        "/food-agriculture/forest",
+        "/food-agriculture/cropland",
+        "/food-agriculture/pesticides",
+        "/food-agriculture/country/{countryIdentifier}",
     }
     assert expected_paths.issubset(set(paths.keys()))
 
@@ -42,7 +52,16 @@ def test_openapi_operations_are_grouped_with_tags(base_url: str) -> None:
     payload = get_json(base_url, "/openapi.json")
 
     tag_names = {tag["name"] for tag in payload.get("tags", [])}
-    assert {"docs", "live", "population", "geography", "energy", "water"}.issubset(tag_names)
+    assert {
+        "docs",
+        "live",
+        "population",
+        "geography",
+        "energy",
+        "water",
+        "gdp",
+        "food-agriculture",
+    }.issubset(tag_names)
 
     expected_tag_per_path = {
         "/": "docs",
@@ -55,6 +74,10 @@ def test_openapi_operations_are_grouped_with_tags(base_url: str) -> None:
         "/energy": "energy",
         "/water": "water",
         "/water/country/{countryIdentifier}": "water",
+        "/gdp": "gdp",
+        "/gdp/country/{countryIdentifier}": "gdp",
+        "/food-agriculture": "food-agriculture",
+        "/food-agriculture/country/{countryIdentifier}": "food-agriculture",
     }
 
     for path, expected_tag in expected_tag_per_path.items():

@@ -10,6 +10,8 @@ This project exposes Worker routes for:
 - Geography data
 - Energy data
 - Water data
+- GDP data
+- Food & Agriculture data
 
 ## Architecture
 
@@ -22,6 +24,7 @@ The codebase is split into single-responsibility modules under `src/worldometer_
 - `table_parser.py`: HTML table normalization/parsing
 - `energy_parser.py`: country energy summary parsing
 - `water_parser.py`: country water summary parsing
+- `food_agriculture_parser.py`: country food/agriculture section parsing
 - `cache.py`: TTL cache implementation
 - `openapi.py`: OpenAPI spec and docs page generator
 - `http.py`: HTTP response helpers
@@ -93,6 +96,16 @@ Optional environment variables:
 - GET `/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal`
 - GET `/water`
 - GET `/water/country/{countryIdentifier}`
+- GET `/gdp?dataset=by-country|per-capita`
+- GET `/gdp/by-country`
+- GET `/gdp/per-capita`
+- GET `/gdp/country/{countryIdentifier}`
+- GET `/food-agriculture?dataset=undernourishment|forest|cropland|pesticides`
+- GET `/food-agriculture/undernourishment`
+- GET `/food-agriculture/forest`
+- GET `/food-agriculture/cropland`
+- GET `/food-agriculture/pesticides`
+- GET `/food-agriculture/country/{countryIdentifier}`
 
 `{countryIdentifier}` accepts a country name, 2-letter ISO alpha code, or 3-letter ISO alpha code.
 

@@ -3,8 +3,13 @@ from typing import Any
 from .cache import TTLCache
 from .config import (
     BASE_URL,
+    COUNTRY_LOOKUP_CACHE_TTL_SECONDS,
     ENERGY_COUNTRY_DATASET_CHOICES,
     ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES,
+    FOOD_AGRICULTURE_COUNTRY_SOURCE_INDEX_PATHS,
+    FOOD_AGRICULTURE_DATASET_CHOICES,
+    GDP_COUNTRY_SOURCE_INDEX_PATHS,
+    GDP_DATASET_CHOICES,
     GEOGRAPHY_REGION_DATASET_INDEX,
     POPULATION_PERIOD_TABLE_INDEX,
     REGION_ALIASES,
@@ -16,8 +21,10 @@ from .config import (
 )
 from .energy_parser import parse_energy_country_summary
 from .fetcher import fetch_text
+from .food_agriculture_parser import parse_food_agriculture_country_summary
 from .live_counters_service import LiveCountersService
 from .population_country_resolver import PopulationCountryResolver
+from .table_parser import normalize_lookup_key, parse_country_source_index
 from .table_service import TableService
 from .water_parser import parse_water_country_summary
 
@@ -25,6 +32,7 @@ from .water_parser import parse_water_country_summary
 class WorldometerApiService:
     def __init__(self) -> None:
         cache = TTLCache()
+        self._cache = cache
         self._table_service = TableService(cache)
         self._live_service = LiveCountersService(cache)
         self._population_country_resolver = PopulationCountryResolver(self._table_service, cache)
@@ -105,6 +113,83 @@ class WorldometerApiService:
         parsed_payload = parse_water_country_summary(html)
         if not parsed_payload:
             raise LookupError(f"Water dataset is not available for country: {match.country}")
+
+        return {
+            "country": match.country,
+            "country_identifier": country_identifier,
+            "matched_by": match.matched_by,
+            "country_slug": match.country_slug,
+            "source_path": source_path,
+            "source_url": f"{BASE_URL}{source_path}",
+            **parsed_payload,
+        }
+
+    async def get_gdp_overview(self, dataset: str) -> dict[str, Any]:
+        dataset_key = self._validate_choice(dataset, GDP_DATASET_CHOICES, "dataset")
+        payload = await self.get_table_route(f"gdp/{dataset_key}")
+        payload["dataset"] = dataset_key
+        return payload
+
+    async def get_gdp_country(self, country_identifier: str) -> dict[str, Any]:
+        match = await self._population_country_resolver.resolve(country_identifier)
+        source_index = await self._get_gdp_country_source_index()
+        source_path = self._resolve_country_source_path(
+            country_identifier=country_identifier,
+            country_name=match.country,
+            country_slug=match.country_slug,
+            source_index=source_index,
+            dataset_name="GDP",
+        )
+
+        tables = await self._table_service.get_tables(source_path)
+        if not tables:
+            raise LookupError(f"GDP dataset is not available for country: {match.country}")
+
+        return {
+            "country": match.country,
+            "country_identifier": country_identifier,
+            "matched_by": match.matched_by,
+            "country_slug": match.country_slug,
+            "source_path": source_path,
+            "source_url": f"{BASE_URL}{source_path}",
+            "table_count": len(tables),
+            "tables": [
+                {
+                    "index": index,
+                    "count": len(rows),
+                    "rows": rows,
+                }
+                for index, rows in enumerate(tables)
+            ],
+        }
+
+    async def get_food_agriculture_overview(self, dataset: str) -> dict[str, Any]:
+        dataset_key = self._validate_choice(dataset, FOOD_AGRICULTURE_DATASET_CHOICES, "dataset")
+        payload = await self.get_table_route(f"food-agriculture/{dataset_key}")
+        payload["dataset"] = dataset_key
+        return payload
+
+    async def get_food_agriculture_country(self, country_identifier: str) -> dict[str, Any]:
+        match = await self._population_country_resolver.resolve(country_identifier)
+        source_index = await self._get_food_agriculture_country_source_index()
+        source_path = self._resolve_country_source_path(
+            country_identifier=country_identifier,
+            country_name=match.country,
+            country_slug=match.country_slug,
+            source_index=source_index,
+            dataset_name="Food & Agriculture",
+        )
+
+        try:
+            html = await fetch_text(f"{BASE_URL}{source_path}")
+        except ValueError as exc:
+            raise LookupError(
+                f"Food & Agriculture dataset is not available for country: {match.country}"
+            ) from exc
+
+        parsed_payload = parse_food_agriculture_country_summary(html)
+        if not parsed_payload:
+            raise LookupError(f"Food & Agriculture dataset is not available for country: {match.country}")
 
         return {
             "country": match.country,
@@ -223,6 +308,64 @@ class WorldometerApiService:
             raise LookupError(
                 f"Energy dataset '{dataset_key}' is not available for country: {country_name}"
             ) from exc
+
+    async def _get_gdp_country_source_index(self) -> dict[str, tuple[str, str]]:
+        return await self._build_country_source_index(
+            cache_key="gdp:country-source-index",
+            source_paths=GDP_COUNTRY_SOURCE_INDEX_PATHS,
+            href_prefix="/gdp/",
+        )
+
+    async def _get_food_agriculture_country_source_index(self) -> dict[str, tuple[str, str]]:
+        return await self._build_country_source_index(
+            cache_key="food-agriculture:country-source-index",
+            source_paths=FOOD_AGRICULTURE_COUNTRY_SOURCE_INDEX_PATHS,
+            href_prefix="/food-agriculture/",
+        )
+
+    async def _build_country_source_index(
+        self,
+        cache_key: str,
+        source_paths: list[str],
+        href_prefix: str,
+    ) -> dict[str, tuple[str, str]]:
+        cached = self._cache.get(cache_key, COUNTRY_LOOKUP_CACHE_TTL_SECONDS)
+        if cached is not None:
+            return cached
+
+        index: dict[str, tuple[str, str]] = {}
+        for source_path in source_paths:
+            html = await fetch_text(f"{BASE_URL}{source_path}")
+            parsed = parse_country_source_index(html, href_prefix)
+            for key, value in parsed.items():
+                index.setdefault(key, value)
+
+        if not index:
+            raise LookupError("Country source index is unavailable")
+
+        return self._cache.set(cache_key, index)
+
+    def _resolve_country_source_path(
+        self,
+        country_identifier: str,
+        country_name: str,
+        country_slug: str,
+        source_index: dict[str, tuple[str, str]],
+        dataset_name: str,
+    ) -> str:
+        candidate_keys: list[str] = []
+        for raw_key in (country_name, country_slug, country_identifier):
+            normalized = normalize_lookup_key(raw_key)
+            if normalized and normalized not in candidate_keys:
+                candidate_keys.append(normalized)
+
+        for key in candidate_keys:
+            match = source_index.get(key)
+            if match is not None:
+                _, source_path = match
+                return source_path
+
+        raise LookupError(f"{dataset_name} dataset is not available for country: {country_name}")
 
     def _validate_choice(self, value: str, mapping: dict[str, int], field_name: str) -> str:
         key = value.strip().lower()

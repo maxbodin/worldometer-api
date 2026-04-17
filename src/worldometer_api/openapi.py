@@ -95,6 +95,86 @@ def build_openapi_spec() -> dict[str, Any]:
                     "responses": {"200": {"description": "Water use table by country"}},
                 }
             },
+            "/gdp": {
+                "get": {
+                    "summary": "GDP overview",
+                    "parameters": [
+                        {
+                            "name": "dataset",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["by-country", "per-capita"],
+                                "default": "by-country",
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "GDP table for the selected dataset"},
+                        "400": {"description": "Invalid dataset"},
+                    },
+                }
+            },
+            "/gdp/by-country": {
+                "get": {
+                    "summary": "GDP by country",
+                    "responses": {"200": {"description": "GDP by country table"}},
+                }
+            },
+            "/gdp/per-capita": {
+                "get": {
+                    "summary": "GDP per capita",
+                    "responses": {"200": {"description": "GDP per capita table"}},
+                }
+            },
+            "/food-agriculture": {
+                "get": {
+                    "summary": "Food & Agriculture overview",
+                    "parameters": [
+                        {
+                            "name": "dataset",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["undernourishment", "forest", "cropland", "pesticides"],
+                                "default": "undernourishment",
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Food & Agriculture table for the selected dataset"
+                        },
+                        "400": {"description": "Invalid dataset"},
+                    },
+                }
+            },
+            "/food-agriculture/undernourishment": {
+                "get": {
+                    "summary": "Undernourishment by country",
+                    "responses": {"200": {"description": "Undernourishment table"}},
+                }
+            },
+            "/food-agriculture/forest": {
+                "get": {
+                    "summary": "Forest area by country",
+                    "responses": {"200": {"description": "Forest area table"}},
+                }
+            },
+            "/food-agriculture/cropland": {
+                "get": {
+                    "summary": "Cropland area by country",
+                    "responses": {"200": {"description": "Cropland area table"}},
+                }
+            },
+            "/food-agriculture/pesticides": {
+                "get": {
+                    "summary": "Pesticide use by country",
+                    "responses": {"200": {"description": "Pesticides table"}},
+                }
+            },
             "/population/most-populous": {
                 "get": {
                     "summary": "Most populous countries",
@@ -243,6 +323,54 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
+            "/gdp/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "Country GDP datasets",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "china"},
+                                "alpha2": {"value": "CN"},
+                                "alpha3": {"value": "CHN"},
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Country GDP tables parsed from source page"},
+                        "404": {"description": "Country not found"},
+                    },
+                }
+            },
+            "/food-agriculture/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "Country Food & Agriculture datasets",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "afghanistan"},
+                                "alpha2": {"value": "AF"},
+                                "alpha3": {"value": "AFG"},
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Country Food & Agriculture sections parsed from source page"
+                        },
+                        "404": {"description": "Country not found"},
+                    },
+                }
+            },
             "/geography/region/{region}": {
                 "get": {
                     "summary": "Region-specific geography datasets",
@@ -290,7 +418,7 @@ def build_openapi_spec() -> dict[str, Any]:
         "info": {
             "title": "Worldometer API",
             "version": "1.0.0",
-            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, energy, and water worldometer data.",
+            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, energy, water, GDP, and food/agriculture worldometer data.",
         },
         "servers": [{"url": "/"}],
         "tags": _build_openapi_tags(),
@@ -306,6 +434,8 @@ def _build_openapi_tags() -> list[dict[str, str]]:
         {"name": "geography", "description": "Geography routes"},
         {"name": "energy", "description": "Energy routes"},
         {"name": "water", "description": "Water routes"},
+        {"name": "gdp", "description": "GDP routes"},
+        {"name": "food-agriculture", "description": "Food & Agriculture routes"},
     ]
 
 
@@ -322,6 +452,10 @@ def _infer_tag_for_path(path: str) -> str:
         return "energy"
     if path.startswith("/water"):
         return "water"
+    if path.startswith("/gdp"):
+        return "gdp"
+    if path.startswith("/food-agriculture"):
+        return "food-agriculture"
     return "docs"
 
 
