@@ -1,0 +1,185 @@
+from html import escape
+from typing import Any
+
+
+SCALAR_API_REFERENCE_JS_URL = "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.52.2"
+
+
+def build_openapi_spec() -> dict[str, Any]:
+    return {
+        "openapi": "3.1.0",
+        "info": {
+            "title": "Worldometer API",
+            "version": "1.0.0",
+            "description": "Lightweight Cloudflare Worker API exposing live, geography, and population worldometer data.",
+        },
+        "servers": [{"url": "/"}],
+        "paths": {
+            "/": {
+                "get": {
+                    "summary": "OpenAPI documentation page",
+                    "responses": {"200": {"description": "Scalar documentation UI"}},
+                }
+            },
+            "/docs": {
+                "get": {
+                    "summary": "OpenAPI documentation page",
+                    "responses": {"200": {"description": "Scalar documentation UI"}},
+                }
+            },
+            "/api": {
+                "get": {
+                    "summary": "OpenAPI documentation page",
+                    "responses": {"200": {"description": "Scalar documentation UI"}},
+                }
+            },
+            "/openapi.json": {
+                "get": {
+                    "summary": "OpenAPI specification",
+                    "responses": {"200": {"description": "OpenAPI document"}},
+                }
+            },
+            "/api/live": {
+                "get": {
+                    "summary": "Live counters",
+                    "responses": {
+                        "200": {
+                            "description": "Live counters grouped by section",
+                        }
+                    },
+                }
+            },
+            "/api/country-codes": {"get": {"summary": "Country codes", "responses": {"200": {"description": "Country codes table"}}}},
+            "/api/population/countries": {"get": {"summary": "Countries by population", "responses": {"200": {"description": "Population-by-country table"}}}},
+            "/api/population/largest-cities": {"get": {"summary": "Largest cities", "responses": {"200": {"description": "Largest cities table"}}}},
+            "/api/population/by-year": {"get": {"summary": "Population by year", "responses": {"200": {"description": "Historical world population table"}}}},
+            "/api/population/projections": {"get": {"summary": "Population projections", "responses": {"200": {"description": "Projected world population table"}}}},
+            "/api/geography/largest-countries": {"get": {"summary": "Largest countries", "responses": {"200": {"description": "Largest countries table"}}}},
+            "/api/geography/world-countries": {"get": {"summary": "World countries", "responses": {"200": {"description": "World countries table"}}}},
+            "/api/population/most-populous": {
+                "get": {
+                    "summary": "Most populous countries",
+                    "parameters": [
+                        {
+                            "name": "period",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string", "enum": ["current", "past", "future"], "default": "current"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "Most populous countries data by period"}, "400": {"description": "Invalid period"}},
+                }
+            },
+            "/api/population/by-region": {
+                "get": {
+                    "summary": "Population by region",
+                    "parameters": [
+                        {
+                            "name": "period",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string", "enum": ["current", "past", "future"], "default": "current"},
+                        }
+                    ],
+                    "responses": {"200": {"description": "Population by region and period"}, "400": {"description": "Invalid period"}},
+                }
+            },
+            "/api/population/region/{region}": {
+                "get": {
+                    "summary": "Region-specific population datasets",
+                    "parameters": [
+                        {
+                            "name": "region",
+                            "in": "path",
+                            "required": True,
+                            "schema": {
+                                "type": "string",
+                                "enum": [
+                                    "asia",
+                                    "africa",
+                                    "europe",
+                                    "latin-america",
+                                    "northern-america",
+                                    "oceania",
+                                ],
+                            },
+                        },
+                        {
+                            "name": "dataset",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["subregions", "historical", "forecast"],
+                                "default": "subregions",
+                            },
+                        },
+                    ],
+                    "responses": {
+                        "200": {"description": "Region population dataset"},
+                        "400": {"description": "Invalid dataset"},
+                        "404": {"description": "Unknown region"},
+                    },
+                }
+            },
+            "/api/geography/region/{region}": {
+                "get": {
+                    "summary": "Region-specific geography datasets",
+                    "parameters": [
+                        {
+                            "name": "region",
+                            "in": "path",
+                            "required": True,
+                            "schema": {
+                                "type": "string",
+                                "enum": [
+                                    "asia",
+                                    "africa",
+                                    "europe",
+                                    "latin-america",
+                                    "northern-america",
+                                    "oceania",
+                                ],
+                            },
+                        },
+                        {
+                            "name": "dataset",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["countries", "dependencies"],
+                                "default": "countries",
+                            },
+                        },
+                    ],
+                    "responses": {
+                        "200": {"description": "Region geography dataset"},
+                        "400": {"description": "Invalid dataset"},
+                        "404": {"description": "Unknown region"},
+                    },
+                }
+            },
+        },
+    }
+
+
+def build_docs_html(spec_path: str = "/openapi.json") -> str:
+    safe_spec_path = escape(spec_path, quote=True)
+    return f"""
+<!DOCTYPE html>
+<html lang=\"en\">
+    <head>
+        <meta charset=\"UTF-8\" />
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+        <title>Worldometer API Docs</title>
+        <style>
+            body {{ margin: 0; }}
+        </style>
+    </head>
+    <body>
+        <script id=\"api-reference\" data-url=\"{safe_spec_path}\"></script>
+        <script src=\"{SCALAR_API_REFERENCE_JS_URL}\" defer></script>
+    </body>
+</html>
+""".strip()

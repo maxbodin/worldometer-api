@@ -68,3 +68,5 @@ python_modules/
 .venv-workers/
 
 .DS_Store
+.vscode
+.vscode/settings.json
