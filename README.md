@@ -100,8 +100,6 @@ Optional environment variables:
 - GET `/water`
 - GET `/water/country/{countryIdentifier}`
 - GET `/gdp?dataset=by-country|per-capita`
-- GET `/gdp/by-country`
-- GET `/gdp/per-capita`
 - GET `/gdp/country/{countryIdentifier}`
 - GET `/food-agriculture?dataset=undernourishment|forest|cropland|pesticides`
 - GET `/food-agriculture/undernourishment`

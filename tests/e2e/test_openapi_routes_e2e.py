@@ -34,8 +34,6 @@ def test_openapi_spec_contains_expected_routes(base_url: str) -> None:
         "/water",
         "/water/country/{countryIdentifier}",
         "/gdp",
-        "/gdp/by-country",
-        "/gdp/per-capita",
         "/gdp/country/{countryIdentifier}",
         "/food-agriculture",
         "/food-agriculture/undernourishment",

@@ -158,12 +158,6 @@ class ApiRouter:
             dataset = self._query_value(query, "dataset", "by-country")
             return await self._service.get_gdp_overview(dataset)
 
-        if segments == ["by-country"]:
-            return await self._service.get_gdp_overview("by-country")
-
-        if segments == ["per-capita"]:
-            return await self._service.get_gdp_overview("per-capita")
-
         if len(segments) == 2 and segments[0] == "country":
             country_identifier = unquote(segments[1])
             return await self._service.get_gdp_country(country_identifier)

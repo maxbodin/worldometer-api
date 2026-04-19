@@ -56,47 +56,70 @@ def parse_cell(text: str) -> Any:
 
 
 def parse_html_tables(html: str) -> list[list[dict[str, Any]]]:
+    titled_tables = parse_html_tables_with_titles(html)
+    return [table["rows"] for table in titled_tables]
+
+
+def parse_html_tables_with_titles(html: str) -> list[dict[str, Any]]:
     soup = BeautifulSoup(html, "html.parser")
-    parsed_tables: list[list[dict[str, Any]]] = []
+    parsed_tables: list[dict[str, Any]] = []
 
     for table in soup.find_all("table"):
-        header_cells = table.select("thead tr th")
-        if not header_cells:
-            first_header_row = table.find("tr")
-            header_cells = first_header_row.find_all("th") if first_header_row else []
-
-        headers = [normalize_header(cell.get_text(" ", strip=True)) for cell in header_cells]
-
-        unique_headers: list[str] = []
-        seen: dict[str, int] = {}
-        for idx, header in enumerate(headers):
-            fallback = header or f"column_{idx + 1}"
-            count = seen.get(fallback, 0)
-            seen[fallback] = count + 1
-            unique_headers.append(fallback if count == 0 else f"{fallback}_{count + 1}")
-
-        rows: list[dict[str, Any]] = []
-        for row in table.find_all("tr"):
-            cells = row.find_all("td")
-            if not cells:
-                continue
-
-            values = [parse_cell(cell.get_text(" ", strip=True)) for cell in cells]
-            if not unique_headers:
-                unique_headers = [f"column_{i + 1}" for i in range(len(values))]
-
-            if len(values) < len(unique_headers):
-                values.extend([None] * (len(unique_headers) - len(values)))
-
-            if len(values) > len(unique_headers):
-                for i in range(len(unique_headers), len(values)):
-                    unique_headers.append(f"column_{i + 1}")
-
-            rows.append(dict(zip(unique_headers, values)))
-
-        parsed_tables.append(rows)
+        parsed_tables.append(
+            {
+                "title": _extract_table_title(table),
+                "rows": _parse_table_rows(table),
+            }
+        )
 
     return parsed_tables
+
+
+def _extract_table_title(table: Any) -> str | None:
+    heading = table.find_previous(["h1", "h2", "h3", "h4"])
+    if heading is None:
+        return None
+
+    title = heading.get_text(" ", strip=True)
+    return title or None
+
+
+def _parse_table_rows(table: Any) -> list[dict[str, Any]]:
+    header_cells = table.select("thead tr th")
+    if not header_cells:
+        first_header_row = table.find("tr")
+        header_cells = first_header_row.find_all("th") if first_header_row else []
+
+    headers = [normalize_header(cell.get_text(" ", strip=True)) for cell in header_cells]
+
+    unique_headers: list[str] = []
+    seen: dict[str, int] = {}
+    for idx, header in enumerate(headers):
+        fallback = header or f"column_{idx + 1}"
+        count = seen.get(fallback, 0)
+        seen[fallback] = count + 1
+        unique_headers.append(fallback if count == 0 else f"{fallback}_{count + 1}")
+
+    rows: list[dict[str, Any]] = []
+    for row in table.find_all("tr"):
+        cells = row.find_all("td")
+        if not cells:
+            continue
+
+        values = [parse_cell(cell.get_text(" ", strip=True)) for cell in cells]
+        if not unique_headers:
+            unique_headers = [f"column_{i + 1}" for i in range(len(values))]
+
+        if len(values) < len(unique_headers):
+            values.extend([None] * (len(unique_headers) - len(values)))
+
+        if len(values) > len(unique_headers):
+            for i in range(len(unique_headers), len(values)):
+                unique_headers.append(f"column_{i + 1}")
+
+        rows.append(dict(zip(unique_headers, values)))
+
+    return rows
 
 
 def parse_population_country_links(html: str) -> dict[str, str]:

@@ -116,18 +116,6 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
-            "/gdp/by-country": {
-                "get": {
-                    "summary": "GDP by country",
-                    "responses": {"200": {"description": "GDP by country table"}},
-                }
-            },
-            "/gdp/per-capita": {
-                "get": {
-                    "summary": "GDP per capita",
-                    "responses": {"200": {"description": "GDP per capita table"}},
-                }
-            },
             "/food-agriculture": {
                 "get": {
                     "summary": "Food & Agriculture overview",

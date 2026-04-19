@@ -27,6 +27,7 @@ from .config import (
 from .energy_parser import parse_energy_country_summary
 from .fetcher import fetch_text
 from .food_agriculture_parser import parse_food_agriculture_country_summary
+from .gdp_parser import parse_gdp_country_description
 from .live_counters_service import LiveCountersService
 from .maps_parser import parse_map_type_page, parse_maps_country_page
 from .population_country_resolver import PopulationCountryResolver
@@ -51,17 +52,23 @@ class WorldometerApiService:
             raise LookupError("Route not found.")
 
         source_path, table_index = TABLE_ROUTES[route_key]
-        rows = await self._table_service.get_table(source_path, table_index)
+        table = await self._table_service.get_titled_table(source_path, table_index)
+        rows = table.get("rows") if isinstance(table.get("rows"), list) else []
+        table_title = self._as_optional_text(table.get("title"))
+
         return {
             "route_key": route_key,
             "source_path": source_path,
+            "table_index": table_index,
+            "table_title": table_title,
             "rows": rows,
             "count": len(rows),
         }
 
     async def get_population_country(self, country_identifier: str) -> dict[str, Any]:
         match = await self._population_country_resolver.resolve(country_identifier)
-        tables = await self._table_service.get_tables(match.source_path)
+        titled_tables = await self._table_service.get_titled_tables(match.source_path)
+        tables = self._build_indexed_tables_payload(titled_tables)
         return {
             "country": match.country,
             "country_identifier": country_identifier,
@@ -69,14 +76,7 @@ class WorldometerApiService:
             "source_path": match.source_path,
             "source_url": f"{BASE_URL}{match.source_path}",
             "table_count": len(tables),
-            "tables": [
-                {
-                    "index": index,
-                    "count": len(rows),
-                    "rows": rows,
-                }
-                for index, rows in enumerate(tables)
-            ],
+            "tables": tables,
         }
 
     async def get_energy_country(self, country_identifier: str, dataset: str) -> dict[str, Any]:
@@ -147,7 +147,11 @@ class WorldometerApiService:
             dataset_name="GDP",
         )
 
-        tables = await self._table_service.get_tables(source_path)
+        html = await self._table_service.get_page_html(source_path)
+        description = parse_gdp_country_description(html)
+
+        titled_tables = await self._table_service.get_titled_tables(source_path)
+        tables = self._build_indexed_tables_payload(titled_tables)
         if not tables:
             raise LookupError(f"GDP dataset is not available for country: {match.country}")
 
@@ -158,15 +162,9 @@ class WorldometerApiService:
             "country_slug": match.country_slug,
             "source_path": source_path,
             "source_url": f"{BASE_URL}{source_path}",
+            "description": description,
             "table_count": len(tables),
-            "tables": [
-                {
-                    "index": index,
-                    "count": len(rows),
-                    "rows": rows,
-                }
-                for index, rows in enumerate(tables)
-            ],
+            "tables": tables,
         }
 
     async def get_food_agriculture_overview(self, dataset: str) -> dict[str, Any]:
@@ -244,8 +242,10 @@ class WorldometerApiService:
                 extra_lookup_suffix=suffixes[current_dataset],
             )
 
-            tables = await self._table_service.get_tables(source_path)
-            if not tables:
+            table_entries = self._build_indexed_tables_payload(
+                await self._table_service.get_titled_tables(source_path)
+            )
+            if not table_entries:
                 raise LookupError(
                     f"GHG {current_dataset} dataset is not available for country: {match.country}"
                 )
@@ -255,15 +255,8 @@ class WorldometerApiService:
                     "dataset": current_dataset,
                     "source_path": source_path,
                     "source_url": f"{BASE_URL}{source_path}",
-                    "table_count": len(tables),
-                    "tables": [
-                        {
-                            "index": index,
-                            "count": len(rows),
-                            "rows": rows,
-                        }
-                        for index, rows in enumerate(tables)
-                    ],
+                    "table_count": len(table_entries),
+                    "tables": table_entries,
                 }
             )
 
@@ -390,25 +383,18 @@ class WorldometerApiService:
                 tables = [
                     {
                         "index": 0,
+                        "title": None,
                         "count": len(rows),
                         "rows": rows,
                     }
                 ]
             else:
-                raw_tables = await self._table_service.get_tables(source_path)
-                if not raw_tables:
+                raw_titled_tables = await self._table_service.get_titled_tables(source_path)
+                tables = self._build_indexed_tables_payload(raw_titled_tables)
+                if not tables:
                     raise LookupError(
                         f"Energy dataset '{dataset_key}' is not available for country: {country_name}"
                     )
-
-                tables = [
-                    {
-                        "index": index,
-                        "count": len(rows),
-                        "rows": rows,
-                    }
-                    for index, rows in enumerate(raw_tables)
-                ]
 
             return {
                 "dataset": dataset_key,
@@ -574,6 +560,27 @@ class WorldometerApiService:
             return f"{BASE_URL}{normalized}"
 
         return normalized
+
+    def _build_indexed_tables_payload(self, titled_tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        tables: list[dict[str, Any]] = []
+        for index, table in enumerate(titled_tables):
+            rows = table.get("rows") if isinstance(table.get("rows"), list) else []
+            tables.append(
+                {
+                    "index": index,
+                    "title": self._as_optional_text(table.get("title")),
+                    "count": len(rows),
+                    "rows": rows,
+                }
+            )
+
+        return tables
+
+    def _as_optional_text(self, value: Any) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
 
     async def _build_country_source_index(
         self,
