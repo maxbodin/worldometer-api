@@ -175,6 +175,80 @@ def build_openapi_spec() -> dict[str, Any]:
                     "responses": {"200": {"description": "Pesticides table"}},
                 }
             },
+            "/ghg-emissions": {
+                "get": {
+                    "summary": "GHG emissions overview",
+                    "responses": {
+                        "200": {"description": "Greenhouse gas emissions overview table"}
+                    },
+                }
+            },
+            "/ghg-emissions/greenhouse": {
+                "get": {
+                    "summary": "Greenhouse gas emissions overview",
+                    "responses": {
+                        "200": {"description": "Greenhouse gas emissions overview table"}
+                    },
+                }
+            },
+            "/ghg-emissions/greenhouse/by-country": {
+                "get": {
+                    "summary": "Greenhouse gas emissions by country",
+                    "responses": {
+                        "200": {"description": "Greenhouse gas emissions by country table"}
+                    },
+                }
+            },
+            "/ghg-emissions/greenhouse/by-year": {
+                "get": {
+                    "summary": "Greenhouse gas emissions by year",
+                    "responses": {
+                        "200": {"description": "Greenhouse gas emissions by year table"}
+                    },
+                }
+            },
+            "/ghg-emissions/greenhouse/per-capita": {
+                "get": {
+                    "summary": "Greenhouse gas emissions per capita",
+                    "responses": {
+                        "200": {
+                            "description": "Greenhouse gas emissions per capita table"
+                        }
+                    },
+                }
+            },
+            "/ghg-emissions/co2": {
+                "get": {
+                    "summary": "CO2 emissions overview",
+                    "responses": {"200": {"description": "CO2 emissions overview table"}},
+                }
+            },
+            "/ghg-emissions/co2/by-country": {
+                "get": {
+                    "summary": "CO2 emissions by country",
+                    "responses": {"200": {"description": "CO2 emissions by country table"}},
+                }
+            },
+            "/ghg-emissions/co2/by-year": {
+                "get": {
+                    "summary": "CO2 emissions by year",
+                    "responses": {"200": {"description": "CO2 emissions by year table"}},
+                }
+            },
+            "/ghg-emissions/co2/per-capita": {
+                "get": {
+                    "summary": "CO2 emissions per capita",
+                    "responses": {
+                        "200": {"description": "CO2 emissions per capita table"}
+                    },
+                }
+            },
+            "/maps": {
+                "get": {
+                    "summary": "Maps overview",
+                    "responses": {"200": {"description": "Maps by country table"}},
+                }
+            },
             "/population/most-populous": {
                 "get": {
                     "summary": "Most populous countries",
@@ -371,6 +445,135 @@ def build_openapi_spec() -> dict[str, Any]:
                     },
                 }
             },
+            "/ghg-emissions/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "Country GHG emissions datasets",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "china"},
+                                "alpha2": {"value": "CN"},
+                                "alpha3": {"value": "CHN"},
+                            },
+                        },
+                        {
+                            "name": "dataset",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["all", "greenhouse", "co2"],
+                                "default": "all",
+                            },
+                        },
+                    ],
+                    "responses": {
+                        "200": {"description": "Country GHG emissions datasets"},
+                        "400": {"description": "Invalid dataset"},
+                        "404": {"description": "Country not found"},
+                    },
+                }
+            },
+            "/maps/country/{countryIdentifier}": {
+                "get": {
+                    "summary": "All maps for a country",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                            "examples": {
+                                "countryName": {"value": "afghanistan"},
+                                "alpha2": {"value": "AF"},
+                                "alpha3": {"value": "AFG"},
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "All map types and image URLs for a country"},
+                        "404": {"description": "Country not found"},
+                    },
+                }
+            },
+            "/maps/physical/{countryIdentifier}": {
+                "get": {
+                    "summary": "Physical map for a country",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Physical map metadata and image URLs"},
+                        "404": {"description": "Country or map type not found"},
+                    },
+                }
+            },
+            "/maps/political/{countryIdentifier}": {
+                "get": {
+                    "summary": "Political map for a country",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Political map metadata and image URLs"},
+                        "404": {"description": "Country or map type not found"},
+                    },
+                }
+            },
+            "/maps/road/{countryIdentifier}": {
+                "get": {
+                    "summary": "Road map for a country",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Road map metadata and image URLs"},
+                        "404": {"description": "Country or map type not found"},
+                    },
+                }
+            },
+            "/maps/locator/{countryIdentifier}": {
+                "get": {
+                    "summary": "Locator map for a country",
+                    "description": "Resolve by country name, ISO2, or ISO3 alpha code.",
+                    "parameters": [
+                        {
+                            "name": "countryIdentifier",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Locator map image URL"},
+                        "404": {"description": "Country or map type not found"},
+                    },
+                }
+            },
             "/geography/region/{region}": {
                 "get": {
                     "summary": "Region-specific geography datasets",
@@ -418,7 +621,7 @@ def build_openapi_spec() -> dict[str, Any]:
         "info": {
             "title": "Worldometer API",
             "version": "1.0.0",
-            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, energy, water, GDP, and food/agriculture worldometer data.",
+            "description": "Lightweight Cloudflare Worker API exposing live, geography, population, energy, water, GDP, food/agriculture, GHG emissions, and maps worldometer data.",
         },
         "servers": [{"url": "/"}],
         "tags": _build_openapi_tags(),
@@ -436,6 +639,8 @@ def _build_openapi_tags() -> list[dict[str, str]]:
         {"name": "water", "description": "Water routes"},
         {"name": "gdp", "description": "GDP routes"},
         {"name": "food-agriculture", "description": "Food & Agriculture routes"},
+        {"name": "ghg-emissions", "description": "GHG emissions routes"},
+        {"name": "maps", "description": "Maps routes"},
     ]
 
 
@@ -456,6 +661,10 @@ def _infer_tag_for_path(path: str) -> str:
         return "gdp"
     if path.startswith("/food-agriculture"):
         return "food-agriculture"
+    if path.startswith("/ghg-emissions"):
+        return "ghg-emissions"
+    if path.startswith("/maps"):
+        return "maps"
     return "docs"
 
 

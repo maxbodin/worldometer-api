@@ -23,6 +23,21 @@ FOOD_AGRICULTURE_UNDERNOURISHMENT_SOURCE_PATH: Final = "/undernourishment/"
 FOOD_AGRICULTURE_FOREST_SOURCE_PATH: Final = "/food-agriculture/forest-by-country/"
 FOOD_AGRICULTURE_CROPLAND_SOURCE_PATH: Final = "/food-agriculture/cropland-by-country/"
 FOOD_AGRICULTURE_PESTICIDES_SOURCE_PATH: Final = "/food-agriculture/pesticides-by-country/"
+GHG_GREENHOUSE_OVERVIEW_SOURCE_PATH: Final = "/greenhouse-gas-emissions/"
+GHG_GREENHOUSE_BY_COUNTRY_SOURCE_PATH: Final = (
+    "/greenhouse-gas-emissions/greenhouse-gas-emissions-by-country/"
+)
+GHG_GREENHOUSE_BY_YEAR_SOURCE_PATH: Final = (
+    "/greenhouse-gas-emissions/greenhouse-gas-emissions-by-year/"
+)
+GHG_GREENHOUSE_PER_CAPITA_SOURCE_PATH: Final = (
+    "/greenhouse-gas-emissions/greenhouse-gas-emissions-per-capita/"
+)
+GHG_CO2_OVERVIEW_SOURCE_PATH: Final = "/co2-emissions/"
+GHG_CO2_BY_COUNTRY_SOURCE_PATH: Final = "/co2-emissions/co2-emissions-by-country/"
+GHG_CO2_BY_YEAR_SOURCE_PATH: Final = "/co2-emissions/co2-emissions-by-year/"
+GHG_CO2_PER_CAPITA_SOURCE_PATH: Final = "/co2-emissions/co2-emissions-per-capita/"
+MAPS_OVERVIEW_SOURCE_PATH: Final = "/maps/"
 
 ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES: Final[dict[str, str]] = {
     "energy": "/energy/{country_slug}-energy/",
@@ -53,6 +68,20 @@ FOOD_AGRICULTURE_DATASET_CHOICES: Final[dict[str, int]] = {
     "pesticides": 3,
 }
 
+GHG_COUNTRY_DATASET_CHOICES: Final[dict[str, int]] = {
+    "all": 0,
+    "greenhouse": 1,
+    "co2": 2,
+}
+
+MAPS_TYPE_CHOICES: Final[dict[str, int]] = {
+    "all": 0,
+    "physical": 1,
+    "political": 2,
+    "road": 3,
+    "locator": 4,
+}
+
 GDP_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
     GDP_BY_COUNTRY_SOURCE_PATH,
     GDP_PER_CAPITA_SOURCE_PATH,
@@ -63,6 +92,20 @@ FOOD_AGRICULTURE_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
     FOOD_AGRICULTURE_FOREST_SOURCE_PATH,
     FOOD_AGRICULTURE_CROPLAND_SOURCE_PATH,
     FOOD_AGRICULTURE_PESTICIDES_SOURCE_PATH,
+]
+
+GHG_GREENHOUSE_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
+    GHG_GREENHOUSE_BY_COUNTRY_SOURCE_PATH,
+    GHG_GREENHOUSE_PER_CAPITA_SOURCE_PATH,
+]
+
+GHG_CO2_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
+    GHG_CO2_BY_COUNTRY_SOURCE_PATH,
+    GHG_CO2_PER_CAPITA_SOURCE_PATH,
+]
+
+MAPS_COUNTRY_SOURCE_INDEX_PATHS: Final[list[str]] = [
+    MAPS_OVERVIEW_SOURCE_PATH,
 ]
 
 LIVE_COUNTER_MAP: Final[dict[str, dict[str, str]]] = {
@@ -163,6 +206,15 @@ TABLE_ROUTES: Final[dict[str, tuple[str, int]]] = {
     "food-agriculture/forest": (FOOD_AGRICULTURE_FOREST_SOURCE_PATH, 0),
     "food-agriculture/cropland": (FOOD_AGRICULTURE_CROPLAND_SOURCE_PATH, 0),
     "food-agriculture/pesticides": (FOOD_AGRICULTURE_PESTICIDES_SOURCE_PATH, 0),
+    "ghg-emissions/greenhouse/overview": (GHG_GREENHOUSE_OVERVIEW_SOURCE_PATH, 0),
+    "ghg-emissions/greenhouse/by-country": (GHG_GREENHOUSE_BY_COUNTRY_SOURCE_PATH, 0),
+    "ghg-emissions/greenhouse/by-year": (GHG_GREENHOUSE_BY_YEAR_SOURCE_PATH, 0),
+    "ghg-emissions/greenhouse/per-capita": (GHG_GREENHOUSE_PER_CAPITA_SOURCE_PATH, 0),
+    "ghg-emissions/co2/overview": (GHG_CO2_OVERVIEW_SOURCE_PATH, 0),
+    "ghg-emissions/co2/by-country": (GHG_CO2_BY_COUNTRY_SOURCE_PATH, 0),
+    "ghg-emissions/co2/by-year": (GHG_CO2_BY_YEAR_SOURCE_PATH, 0),
+    "ghg-emissions/co2/per-capita": (GHG_CO2_PER_CAPITA_SOURCE_PATH, 0),
+    "maps/overview": (MAPS_OVERVIEW_SOURCE_PATH, 0),
 }
 
 POPULATION_PERIOD_TABLE_INDEX: Final[dict[str, int]] = {
@@ -247,4 +299,20 @@ ROOT_ROUTES: Final[list[str]] = [
     "/food-agriculture/cropland",
     "/food-agriculture/pesticides",
     "/food-agriculture/country/{countryIdentifier}",
+    "/ghg-emissions",
+    "/ghg-emissions/greenhouse",
+    "/ghg-emissions/greenhouse/by-country",
+    "/ghg-emissions/greenhouse/by-year",
+    "/ghg-emissions/greenhouse/per-capita",
+    "/ghg-emissions/co2",
+    "/ghg-emissions/co2/by-country",
+    "/ghg-emissions/co2/by-year",
+    "/ghg-emissions/co2/per-capita",
+    "/ghg-emissions/country/{countryIdentifier}?dataset=all|greenhouse|co2",
+    "/maps",
+    "/maps/country/{countryIdentifier}",
+    "/maps/physical/{countryIdentifier}",
+    "/maps/political/{countryIdentifier}",
+    "/maps/road/{countryIdentifier}",
+    "/maps/locator/{countryIdentifier}",
 ]

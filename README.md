@@ -12,6 +12,8 @@ This project exposes Worker routes for:
 - Water data
 - GDP data
 - Food & Agriculture data
+- GHG emissions data
+- Maps data
 
 ## Architecture
 
@@ -25,6 +27,7 @@ The codebase is split into single-responsibility modules under `src/worldometer_
 - `energy_parser.py`: country energy summary parsing
 - `water_parser.py`: country water summary parsing
 - `food_agriculture_parser.py`: country food/agriculture section parsing
+- `maps_parser.py`: country maps parsing
 - `cache.py`: TTL cache implementation
 - `openapi.py`: OpenAPI spec and docs page generator
 - `http.py`: HTTP response helpers
@@ -106,6 +109,22 @@ Optional environment variables:
 - GET `/food-agriculture/cropland`
 - GET `/food-agriculture/pesticides`
 - GET `/food-agriculture/country/{countryIdentifier}`
+- GET `/ghg-emissions`
+- GET `/ghg-emissions/greenhouse`
+- GET `/ghg-emissions/greenhouse/by-country`
+- GET `/ghg-emissions/greenhouse/by-year`
+- GET `/ghg-emissions/greenhouse/per-capita`
+- GET `/ghg-emissions/co2`
+- GET `/ghg-emissions/co2/by-country`
+- GET `/ghg-emissions/co2/by-year`
+- GET `/ghg-emissions/co2/per-capita`
+- GET `/ghg-emissions/country/{countryIdentifier}?dataset=all|greenhouse|co2`
+- GET `/maps`
+- GET `/maps/country/{countryIdentifier}`
+- GET `/maps/physical/{countryIdentifier}`
+- GET `/maps/political/{countryIdentifier}`
+- GET `/maps/road/{countryIdentifier}`
+- GET `/maps/locator/{countryIdentifier}`
 
 `{countryIdentifier}` accepts a country name, 2-letter ISO alpha code, or 3-letter ISO alpha code.
 

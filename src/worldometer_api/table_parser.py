@@ -130,27 +130,34 @@ def parse_population_country_links(html: str) -> dict[str, str]:
     return country_links
 
 
-def parse_country_source_index(html: str, href_prefix: str) -> dict[str, tuple[str, str]]:
+def parse_country_source_index(
+    html: str,
+    href_prefix: str,
+    slug_suffixes: tuple[str, ...] = ("-gdp", "-food-agriculture"),
+) -> dict[str, tuple[str, str]]:
     soup = BeautifulSoup(html, "html.parser")
     index: dict[str, tuple[str, str]] = {}
 
     for row in soup.find_all("tr"):
         cells = row.find_all("td")
-        if len(cells) < 2:
-            continue
-
-        country_name = cells[1].get_text(" ", strip=True)
-        if not country_name:
+        if not cells:
             continue
 
         link = None
+        link_label = ""
         for candidate in row.find_all("a", href=True):
             href = str(candidate["href"]).strip()
             if href.startswith(href_prefix):
                 link = href
+                link_label = candidate.get_text(" ", strip=True)
                 break
 
         if link is None:
+            continue
+
+        country_cell_index = 1 if len(cells) > 1 else 0
+        country_name = cells[country_cell_index].get_text(" ", strip=True) or link_label
+        if not country_name:
             continue
 
         source_path = link.split("#", 1)[0].split("?", 1)[0].strip()
@@ -176,7 +183,7 @@ def parse_country_source_index(html: str, href_prefix: str) -> dict[str, tuple[s
         if normalized_slug:
             key_variants.append(normalized_slug)
 
-        for suffix in ("-gdp", "-food-agriculture"):
+        for suffix in slug_suffixes:
             if slug.endswith(suffix):
                 normalized_without_suffix = normalize_lookup_key(slug[: -len(suffix)])
                 if normalized_without_suffix:

@@ -43,6 +43,22 @@ def test_openapi_spec_contains_expected_routes(base_url: str) -> None:
         "/food-agriculture/cropland",
         "/food-agriculture/pesticides",
         "/food-agriculture/country/{countryIdentifier}",
+        "/ghg-emissions",
+        "/ghg-emissions/greenhouse",
+        "/ghg-emissions/greenhouse/by-country",
+        "/ghg-emissions/greenhouse/by-year",
+        "/ghg-emissions/greenhouse/per-capita",
+        "/ghg-emissions/co2",
+        "/ghg-emissions/co2/by-country",
+        "/ghg-emissions/co2/by-year",
+        "/ghg-emissions/co2/per-capita",
+        "/ghg-emissions/country/{countryIdentifier}",
+        "/maps",
+        "/maps/country/{countryIdentifier}",
+        "/maps/physical/{countryIdentifier}",
+        "/maps/political/{countryIdentifier}",
+        "/maps/road/{countryIdentifier}",
+        "/maps/locator/{countryIdentifier}",
     }
     assert expected_paths.issubset(set(paths.keys()))
 
@@ -61,6 +77,8 @@ def test_openapi_operations_are_grouped_with_tags(base_url: str) -> None:
         "water",
         "gdp",
         "food-agriculture",
+        "ghg-emissions",
+        "maps",
     }.issubset(tag_names)
 
     expected_tag_per_path = {
@@ -78,6 +96,10 @@ def test_openapi_operations_are_grouped_with_tags(base_url: str) -> None:
         "/gdp/country/{countryIdentifier}": "gdp",
         "/food-agriculture": "food-agriculture",
         "/food-agriculture/country/{countryIdentifier}": "food-agriculture",
+        "/ghg-emissions": "ghg-emissions",
+        "/ghg-emissions/country/{countryIdentifier}": "ghg-emissions",
+        "/maps": "maps",
+        "/maps/country/{countryIdentifier}": "maps",
     }
 
     for path, expected_tag in expected_tag_per_path.items():
