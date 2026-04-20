@@ -1,6 +1,8 @@
 from html import escape
 from typing import Any
 
+from .config import GDP_REGION_CHOICES
+
 
 SCALAR_API_REFERENCE_JS_URL = "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.52.2"
 
@@ -124,6 +126,7 @@ def build_openapi_spec() -> dict[str, Any]:
                             "required": False,
                             "schema": {
                                 "type": "string",
+                                "enum": list(GDP_REGION_CHOICES.keys()),
                             },
                         },
                         {

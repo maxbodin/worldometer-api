@@ -24,6 +24,16 @@ REGIONS = [
     "oceania",
 ]
 
+GDP_ALLOWED_REGIONS = [
+    "worldwide",
+    "asia",
+    "africa",
+    "europe",
+    "northern-america",
+    "oceania",
+    "latin-america-and-the-caribbean",
+]
+
 
 def _is_ready(base_url: str, timeout_seconds: float = 2.0) -> bool:
     try:

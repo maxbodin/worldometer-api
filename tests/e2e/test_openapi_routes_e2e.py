@@ -1,5 +1,6 @@
 import pytest
 
+from .conftest import GDP_ALLOWED_REGIONS
 from .utils import get_json
 
 
@@ -114,4 +115,5 @@ def test_openapi_gdp_route_documents_extended_query_parameters(base_url: str) ->
 
     assert {"dataset", "source", "region", "year", "metric"}.issubset(parameters_by_name)
     assert parameters_by_name["source"]["schema"]["enum"] == ["imf", "wb"]
+    assert parameters_by_name["region"]["schema"]["enum"] == GDP_ALLOWED_REGIONS
     assert parameters_by_name["metric"]["schema"]["enum"] == ["nominal", "ppp"]

@@ -61,6 +61,16 @@ GDP_DATASET_CHOICES: Final[dict[str, int]] = {
     "per-capita": 1,
 }
 
+GDP_REGION_CHOICES: Final[dict[str, int]] = {
+    "worldwide": 0,
+    "asia": 1,
+    "africa": 2,
+    "europe": 3,
+    "northern-america": 4,
+    "oceania": 5,
+    "latin-america-and-the-caribbean": 6,
+}
+
 FOOD_AGRICULTURE_DATASET_CHOICES: Final[dict[str, int]] = {
     "undernourishment": 0,
     "forest": 1,
@@ -289,7 +299,7 @@ ROOT_ROUTES: Final[list[str]] = [
     "/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal",
     "/water",
     "/water/country/{countryIdentifier}",
-    "/gdp?dataset=by-country|per-capita&source=imf|wb&region={region}&year={yyyy}&metric=nominal|ppp",
+    "/gdp?dataset=by-country|per-capita&source=imf|wb&region=worldwide|asia|africa|europe|northern-america|oceania|latin-america-and-the-caribbean&year={yyyy}&metric=nominal|ppp",
     "/gdp/country/{countryIdentifier}",
     "/food-agriculture?dataset=undernourishment|forest|cropland|pesticides",
     "/food-agriculture/undernourishment",

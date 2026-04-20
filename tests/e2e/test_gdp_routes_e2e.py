@@ -1,5 +1,6 @@
 import pytest
 
+from .conftest import GDP_ALLOWED_REGIONS
 from .utils import assert_table_payload, get_json
 
 
@@ -137,6 +138,42 @@ def test_gdp_overview_per_capita_supports_additional_query_parameters(
     assert f"metric={expected_metric}" in payload["source_path"]
     assert "Source: IMF" in payload["table_title"]
     assert f"Metric: {expected_metric_label}" in payload["table_title"]
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize("region", GDP_ALLOWED_REGIONS)
+def test_gdp_overview_region_accepts_only_documented_region_values(
+    base_url: str,
+    region: str,
+) -> None:
+    payload = get_json(
+        base_url,
+        f"/gdp?dataset=per-capita&source=imf&region={region}&year=2027&metric=ppp",
+    )
+
+    assert_table_payload(payload)
+    assert payload["parameters"]["region"] == region
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    "region",
+    [
+        "latin-america",
+        "north-america",
+        "america",
+    ],
+)
+def test_gdp_overview_region_rejects_unsupported_values(base_url: str, region: str) -> None:
+    payload = get_json(
+        base_url,
+        f"/gdp?dataset=per-capita&source=imf&region={region}&year=2027&metric=ppp",
+        expected_status=400,
+    )
+
+    assert "Invalid region" in payload.get("error", "")
+    for allowed_region in GDP_ALLOWED_REGIONS:
+        assert allowed_region in payload["error"]
 
 
 

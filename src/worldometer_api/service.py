@@ -18,6 +18,7 @@ from .config import (
     MAPS_TYPE_CHOICES,
     GDP_COUNTRY_SOURCE_INDEX_PATHS,
     GDP_DATASET_CHOICES,
+    GDP_REGION_CHOICES,
     GEOGRAPHY_REGION_DATASET_INDEX,
     POPULATION_PERIOD_TABLE_INDEX,
     REGION_ALIASES,
@@ -718,8 +719,7 @@ class WorldometerApiService:
         if region is None:
             return None
 
-        normalized = region.strip().lower().replace("_", "-")
-        return normalized or None
+        return self._validate_choice(region, GDP_REGION_CHOICES, "region")
 
     def _normalize_optional_gdp_year(self, year: str | None) -> str | None:
         if year is None:
