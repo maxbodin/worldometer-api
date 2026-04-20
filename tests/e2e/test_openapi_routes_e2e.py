@@ -103,3 +103,15 @@ def test_openapi_operations_are_grouped_with_tags(base_url: str) -> None:
     for path, expected_tag in expected_tag_per_path.items():
         operation = payload["paths"][path]["get"]
         assert operation.get("tags") == [expected_tag]
+
+
+@pytest.mark.e2e
+def test_openapi_gdp_route_documents_extended_query_parameters(base_url: str) -> None:
+    payload = get_json(base_url, "/openapi.json")
+
+    parameters = payload["paths"]["/gdp"]["get"]["parameters"]
+    parameters_by_name = {parameter["name"]: parameter for parameter in parameters}
+
+    assert {"dataset", "source", "region", "year", "metric"}.issubset(parameters_by_name)
+    assert parameters_by_name["source"]["schema"]["enum"] == ["imf", "wb"]
+    assert parameters_by_name["metric"]["schema"]["enum"] == ["nominal", "ppp"]

@@ -22,6 +22,123 @@ def test_gdp_overview_dataset_query_variants(base_url: str, dataset: str) -> Non
     assert payload["route_key"] == f"gdp/{dataset}"
 
 
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    ("path", "expected_source", "expected_metric"),
+    [
+        (
+            "/gdp?dataset=by-country&source=wb&region=worldwide&year=2024",
+            "wb",
+            "nominal",
+        ),
+        (
+            "/gdp?dataset=by-country&source=wb&region=worldwide&year=2024&metric=ppp",
+            "wb",
+            "ppp",
+        ),
+        (
+            "/gdp?dataset=by-country&source=imf&region=worldwide&year=2027",
+            "imf",
+            "nominal",
+        ),
+    ],
+)
+def test_gdp_overview_by_country_supports_additional_query_parameters(
+    base_url: str,
+    path: str,
+    expected_source: str,
+    expected_metric: str,
+) -> None:
+    payload = get_json(base_url, path)
+
+    assert_table_payload(payload)
+    assert payload["dataset"] == "by-country"
+    assert payload["route_key"] == "gdp/by-country"
+    assert payload["parameters"]["source"] == expected_source
+    assert payload["parameters"]["metric"] == expected_metric
+    assert payload["parameters"]["region"] == "worldwide"
+    assert payload["parameters"]["year"] in {"2024", "2027"}
+    assert f"source={expected_source}" in payload["source_path"]
+    assert "region=worldwide" in payload["source_path"]
+    assert "| Source:" in payload["table_title"]
+    assert "| Metric:" in payload["table_title"]
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    (
+        "path",
+        "expected_region",
+        "expected_year",
+        "expected_metric",
+        "expected_metric_label",
+    ),
+    [
+        (
+            "/gdp?dataset=per-capita&source=imf&region=asia&year=2026&metric=nominal",
+            "asia",
+            "2026",
+            "nominal",
+            "Nominal GDP",
+        ),
+        (
+            "/gdp?dataset=per-capita&source=imf&region=asia&year=2026&metric=ppp",
+            "asia",
+            "2026",
+            "ppp",
+            "PPP GDP",
+        ),
+        (
+            "/gdp?dataset=per-capita&source=imf&region=asia&year=2027&metric=ppp",
+            "asia",
+            "2027",
+            "ppp",
+            "PPP GDP",
+        ),
+        (
+            "/gdp?dataset=per-capita&source=imf&region=worldwide&year=2027&metric=ppp",
+            "worldwide",
+            "2027",
+            "ppp",
+            "PPP GDP",
+        ),
+        (
+            "/gdp?dataset=per-capita&source=imf&region=northern-america&year=2027&metric=ppp",
+            "northern-america",
+            "2027",
+            "ppp",
+            "PPP GDP",
+        ),
+    ],
+)
+def test_gdp_overview_per_capita_supports_additional_query_parameters(
+    base_url: str,
+    path: str,
+    expected_region: str,
+    expected_year: str,
+    expected_metric: str,
+    expected_metric_label: str,
+) -> None:
+    payload = get_json(base_url, path)
+
+    assert_table_payload(payload)
+    assert payload["dataset"] == "per-capita"
+    assert payload["route_key"] == "gdp/per-capita"
+    assert payload["parameters"] == {
+        "source": "imf",
+        "region": expected_region,
+        "year": expected_year,
+        "metric": expected_metric,
+    }
+    assert payload["source_path"].startswith("/gdp/gdp-per-capita/")
+    assert "source=imf" in payload["source_path"]
+    assert f"region={expected_region}" in payload["source_path"]
+    assert f"year={expected_year}" in payload["source_path"]
+    assert f"metric={expected_metric}" in payload["source_path"]
+    assert "Source: IMF" in payload["table_title"]
+    assert f"Metric: {expected_metric_label}" in payload["table_title"]
+
+
 
 
 @pytest.mark.e2e
@@ -83,8 +200,20 @@ def test_gdp_country_route_uses_group_specific_country_slug_mapping(base_url: st
 def test_gdp_country_tables_include_titles(base_url: str) -> None:
     payload = get_json(base_url, "/gdp/country/china")
 
-    assert any(table.get("title") == "China GDP Projections (IMF)" for table in payload["tables"])
+    assert any("China GDP Projections (IMF)" in str(table.get("title")) for table in payload["tables"])
     assert all("title" in table for table in payload["tables"])
+
+
+@pytest.mark.e2e
+def test_gdp_country_table_titles_include_source_and_metric_context(base_url: str) -> None:
+    payload = get_json(base_url, "/gdp/country/russia")
+
+    titles = [str(table.get("title", "")) for table in payload["tables"]]
+
+    assert all("| Source:" in title and "| Metric:" in title for title in titles if title)
+    assert any("Source: IMF" in title and "Metric: Nominal GDP" in title for title in titles)
+    assert any("Source: IMF" in title and "Metric: PPP GDP" in title for title in titles)
+    assert any("Source: WB" in title and "Metric: Nominal GDP" in title for title in titles)
 
 
 @pytest.mark.e2e

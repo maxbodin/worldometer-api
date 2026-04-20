@@ -3,7 +3,7 @@ from typing import Any
 from .cache import TTLCache
 from .config import BASE_URL, TABLE_CACHE_TTL_SECONDS
 from .fetcher import fetch_text
-from .table_parser import parse_html_tables_with_titles
+from .parsers.table_parser import parse_html_tables_with_titles
 
 
 class TableService:

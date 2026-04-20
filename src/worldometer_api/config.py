@@ -289,7 +289,7 @@ ROOT_ROUTES: Final[list[str]] = [
     "/energy/country/{countryIdentifier}?dataset=all|energy|electricity|gas|oil|coal",
     "/water",
     "/water/country/{countryIdentifier}",
-    "/gdp?dataset=by-country|per-capita",
+    "/gdp?dataset=by-country|per-capita&source=imf|wb&region={region}&year={yyyy}&metric=nominal|ppp",
     "/gdp/country/{countryIdentifier}",
     "/food-agriculture?dataset=undernourishment|forest|cropland|pesticides",
     "/food-agriculture/undernourishment",

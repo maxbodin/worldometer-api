@@ -156,7 +156,11 @@ class ApiRouter:
     ) -> dict[str, object] | None:
         if not segments:
             dataset = self._query_value(query, "dataset", "by-country")
-            return await self._service.get_gdp_overview(dataset)
+            source = self._query_optional_value(query, "source")
+            region = self._query_optional_value(query, "region")
+            year = self._query_optional_value(query, "year")
+            metric = self._query_optional_value(query, "metric")
+            return await self._service.get_gdp_overview(dataset, source, region, year, metric)
 
         if len(segments) == 2 and segments[0] == "country":
             country_identifier = unquote(segments[1])
@@ -240,3 +244,7 @@ class ApiRouter:
 
     def _query_value(self, query: dict[str, list[str]], key: str, default: str) -> str:
         return query.get(key, [default])[0]
+
+    def _query_optional_value(self, query: dict[str, list[str]], key: str) -> str | None:
+        value = query.get(key, [""])[0].strip()
+        return value or None

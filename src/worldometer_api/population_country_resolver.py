@@ -8,7 +8,7 @@ from .config import (
     POPULATION_BY_COUNTRY_SOURCE_PATH,
 )
 from .fetcher import fetch_text
-from .table_parser import normalize_lookup_key, parse_population_country_links
+from .parsers.table_parser import normalize_lookup_key, parse_population_country_links
 from .table_service import TableService
 
 

@@ -108,11 +108,46 @@ def build_openapi_spec() -> dict[str, Any]:
                                 "enum": ["by-country", "per-capita"],
                                 "default": "by-country",
                             },
-                        }
+                        },
+                        {
+                            "name": "source",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["imf", "wb"],
+                            },
+                        },
+                        {
+                            "name": "region",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                            },
+                        },
+                        {
+                            "name": "year",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "pattern": "^[0-9]{4}$",
+                            },
+                        },
+                        {
+                            "name": "metric",
+                            "in": "query",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                                "enum": ["nominal", "ppp"],
+                            },
+                        },
                     ],
                     "responses": {
                         "200": {"description": "GDP table for the selected dataset"},
-                        "400": {"description": "Invalid dataset"},
+                        "400": {"description": "Invalid dataset or query parameter"},
                     },
                 }
             },

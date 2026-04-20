@@ -65,9 +65,13 @@ def parse_html_tables_with_titles(html: str) -> list[dict[str, Any]]:
     parsed_tables: list[dict[str, Any]] = []
 
     for table in soup.find_all("table"):
+        title = _extract_table_title(table)
+        context = _extract_table_context(table, title)
         parsed_tables.append(
             {
-                "title": _extract_table_title(table),
+                "title": title,
+                "source": context["source"],
+                "metric": context["metric"],
                 "rows": _parse_table_rows(table),
             }
         )
@@ -82,6 +86,59 @@ def _extract_table_title(table: Any) -> str | None:
 
     title = heading.get_text(" ", strip=True)
     return title or None
+
+
+def _extract_table_context(table: Any, title: str | None) -> dict[str, str | None]:
+    source: str | None = None
+    metric: str | None = None
+
+    for element in [table, *table.parents]:
+        x_show = element.get("x-show") if hasattr(element, "get") else None
+        if not isinstance(x_show, str) or not x_show.strip():
+            continue
+
+        for raw_token in re.findall(r"['\"]([a-zA-Z][a-zA-Z0-9_-]*)['\"]", x_show):
+            token = normalize_lookup_key(raw_token)
+            if source is None and token == "imf":
+                source = "imf"
+                continue
+
+            if source is None and token in {"wb", "worldbank"}:
+                source = "wb"
+                continue
+
+            if metric is None and token in {"nominal", "ppp"}:
+                metric = token
+
+        if source is not None and metric is not None:
+            break
+
+    title_key = normalize_lookup_key(title or "")
+    if source is None:
+        if "imf" in title_key:
+            source = "imf"
+        elif "worldbank" in title_key or title_key.endswith("wb"):
+            source = "wb"
+
+    if metric is None:
+        if "ppp" in title_key:
+            metric = "ppp"
+        elif "nominal" in title_key:
+            metric = "nominal"
+
+    if metric is None:
+        header_text = " ".join(th.get_text(" ", strip=True) for th in table.find_all("th"))
+        header_key = normalize_lookup_key(header_text)
+        if "ppp" in header_key:
+            metric = "ppp"
+
+    if metric is None:
+        metric = "nominal"
+
+    return {
+        "source": source,
+        "metric": metric,
+    }
 
 
 def _parse_table_rows(table: Any) -> list[dict[str, Any]]:

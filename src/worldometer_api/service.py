@@ -1,4 +1,5 @@
-from typing import Any
+from typing import Any, Callable
+from urllib.parse import urlencode
 
 from .cache import TTLCache
 from .config import (
@@ -6,11 +7,13 @@ from .config import (
     COUNTRY_LOOKUP_CACHE_TTL_SECONDS,
     ENERGY_COUNTRY_DATASET_CHOICES,
     ENERGY_COUNTRY_DATASET_SOURCE_TEMPLATES,
+    GDP_BY_COUNTRY_SOURCE_PATH,
     GHG_CO2_COUNTRY_SOURCE_INDEX_PATHS,
     GHG_COUNTRY_DATASET_CHOICES,
     GHG_GREENHOUSE_COUNTRY_SOURCE_INDEX_PATHS,
     FOOD_AGRICULTURE_COUNTRY_SOURCE_INDEX_PATHS,
     FOOD_AGRICULTURE_DATASET_CHOICES,
+    GDP_PER_CAPITA_SOURCE_PATH,
     MAPS_COUNTRY_SOURCE_INDEX_PATHS,
     MAPS_TYPE_CHOICES,
     GDP_COUNTRY_SOURCE_INDEX_PATHS,
@@ -24,16 +27,16 @@ from .config import (
     TABLE_ROUTES,
     WATER_COUNTRY_SOURCE_TEMPLATE,
 )
-from .energy_parser import parse_energy_country_summary
 from .fetcher import fetch_text
-from .food_agriculture_parser import parse_food_agriculture_country_summary
-from .gdp_parser import parse_gdp_country_description
 from .live_counters_service import LiveCountersService
-from .maps_parser import parse_map_type_page, parse_maps_country_page
+from .parsers.energy_parser import parse_energy_country_summary
+from .parsers.food_agriculture_parser import parse_food_agriculture_country_summary
+from .parsers.gdp_parser import parse_gdp_country_description
+from .parsers.maps_parser import parse_map_type_page, parse_maps_country_page
+from .parsers.table_parser import normalize_lookup_key, parse_country_source_index
+from .parsers.water_parser import parse_water_country_summary
 from .population_country_resolver import PopulationCountryResolver
-from .table_parser import normalize_lookup_key, parse_country_source_index
 from .table_service import TableService
-from .water_parser import parse_water_country_summary
 
 
 class WorldometerApiService:
@@ -130,11 +133,53 @@ class WorldometerApiService:
             **parsed_payload,
         }
 
-    async def get_gdp_overview(self, dataset: str) -> dict[str, Any]:
+    async def get_gdp_overview(
+        self,
+        dataset: str,
+        source: str | None = None,
+        region: str | None = None,
+        year: str | None = None,
+        metric: str | None = None,
+    ) -> dict[str, Any]:
         dataset_key = self._validate_choice(dataset, GDP_DATASET_CHOICES, "dataset")
-        payload = await self.get_table_route(f"gdp/{dataset_key}")
-        payload["dataset"] = dataset_key
-        return payload
+        source_key = self._normalize_optional_gdp_source(source)
+        region_value = self._normalize_optional_gdp_region(region)
+        year_value = self._normalize_optional_gdp_year(year)
+        metric_key = self._normalize_optional_gdp_metric(metric)
+
+        source_path = self._build_gdp_overview_source_path(
+            dataset_key,
+            source_key,
+            region_value,
+            year_value,
+            metric_key,
+        )
+
+        table, table_index = await self._get_gdp_overview_table(
+            source_path,
+            preferred_source=source_key,
+            preferred_metric=metric_key,
+        )
+        rows = table.get("rows") if isinstance(table.get("rows"), list) else []
+
+        resolved_source = self._resolve_gdp_source_key(table.get("source"), source_key)
+        resolved_metric = self._resolve_gdp_metric_key(table.get("metric"), metric_key)
+
+        return {
+            "route_key": f"gdp/{dataset_key}",
+            "source_path": source_path,
+            "table_index": table_index,
+            "table_title": self._format_gdp_table_title(table),
+            "rows": rows,
+            "count": len(rows),
+            "dataset": dataset_key,
+            "parameters": {
+                "source": resolved_source,
+                "region": region_value,
+                "year": year_value,
+                "metric": resolved_metric,
+            },
+        }
 
     async def get_gdp_country(self, country_identifier: str) -> dict[str, Any]:
         match = await self._population_country_resolver.resolve(country_identifier)
@@ -151,7 +196,10 @@ class WorldometerApiService:
         description = parse_gdp_country_description(html)
 
         titled_tables = await self._table_service.get_titled_tables(source_path)
-        tables = self._build_indexed_tables_payload(titled_tables)
+        tables = self._build_indexed_tables_payload(
+            titled_tables,
+            title_builder=self._format_gdp_table_title,
+        )
         if not tables:
             raise LookupError(f"GDP dataset is not available for country: {match.country}")
 
@@ -561,14 +609,21 @@ class WorldometerApiService:
 
         return normalized
 
-    def _build_indexed_tables_payload(self, titled_tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _build_indexed_tables_payload(
+        self,
+        titled_tables: list[dict[str, Any]],
+        title_builder: Callable[[dict[str, Any]], str | None] | None = None,
+    ) -> list[dict[str, Any]]:
         tables: list[dict[str, Any]] = []
         for index, table in enumerate(titled_tables):
             rows = table.get("rows") if isinstance(table.get("rows"), list) else []
+            resolved_title = (
+                title_builder(table) if title_builder is not None else self._as_optional_text(table.get("title"))
+            )
             tables.append(
                 {
                     "index": index,
-                    "title": self._as_optional_text(table.get("title")),
+                    "title": resolved_title,
                     "count": len(rows),
                     "rows": rows,
                 }
@@ -581,6 +636,159 @@ class WorldometerApiService:
             return None
         text = str(value).strip()
         return text or None
+
+    async def _get_gdp_overview_table(
+        self,
+        source_path: str,
+        preferred_source: str | None,
+        preferred_metric: str | None,
+    ) -> tuple[dict[str, Any], int]:
+        titled_tables = await self._table_service.get_titled_tables(source_path)
+        if not titled_tables:
+            raise LookupError("GDP overview table is unavailable")
+
+        if preferred_source is not None and preferred_metric is not None:
+            for index, table in enumerate(titled_tables):
+                table_source = self._parse_gdp_source_key(table.get("source"))
+                table_metric = self._parse_gdp_metric_key(table.get("metric"))
+                if table_source == preferred_source and table_metric == preferred_metric:
+                    return table, index
+
+        source_to_match = preferred_source
+        if source_to_match is None:
+            source_to_match = "imf"
+
+        for index, table in enumerate(titled_tables):
+            table_source = self._parse_gdp_source_key(table.get("source"))
+            if table_source == source_to_match:
+                return table, index
+
+        if preferred_metric is not None:
+            for index, table in enumerate(titled_tables):
+                table_metric = self._parse_gdp_metric_key(table.get("metric"))
+                if table_metric == preferred_metric:
+                    return table, index
+
+        return titled_tables[0], 0
+
+    def _build_gdp_overview_source_path(
+        self,
+        dataset_key: str,
+        source_key: str | None,
+        region_value: str | None,
+        year_value: str | None,
+        metric_key: str | None,
+    ) -> str:
+        base_path = (
+            GDP_BY_COUNTRY_SOURCE_PATH if dataset_key == "by-country" else GDP_PER_CAPITA_SOURCE_PATH
+        )
+
+        query_params: dict[str, str] = {}
+        if source_key is not None:
+            query_params["source"] = source_key
+        if region_value is not None:
+            query_params["region"] = region_value
+        if year_value is not None:
+            query_params["year"] = year_value
+        if metric_key is not None:
+            query_params["metric"] = metric_key
+
+        if not query_params:
+            return base_path
+
+        return f"{base_path}?{urlencode(query_params)}"
+
+    def _normalize_optional_gdp_source(self, source: str | None) -> str | None:
+        if source is None:
+            return None
+
+        key = normalize_lookup_key(source)
+        if not key:
+            return None
+
+        if key == "imf":
+            return "imf"
+
+        if key in {"wb", "worldbank"}:
+            return "wb"
+
+        raise ValueError("Invalid source. Allowed values: imf, wb")
+
+    def _normalize_optional_gdp_region(self, region: str | None) -> str | None:
+        if region is None:
+            return None
+
+        normalized = region.strip().lower().replace("_", "-")
+        return normalized or None
+
+    def _normalize_optional_gdp_year(self, year: str | None) -> str | None:
+        if year is None:
+            return None
+
+        normalized = year.strip()
+        if not normalized:
+            return None
+
+        if not (normalized.isdigit() and len(normalized) == 4):
+            raise ValueError("Invalid year. Expected a 4-digit year")
+
+        return normalized
+
+    def _normalize_optional_gdp_metric(self, metric: str | None) -> str | None:
+        if metric is None:
+            return None
+
+        key = normalize_lookup_key(metric)
+        if not key:
+            return None
+
+        if key == "nominal":
+            return "nominal"
+
+        if key == "ppp":
+            return "ppp"
+
+        raise ValueError("Invalid metric. Allowed values: nominal, ppp")
+
+    def _resolve_gdp_source_key(self, source: Any, fallback: str | None) -> str:
+        resolved = self._parse_gdp_source_key(source)
+        if resolved is not None:
+            return resolved
+        if fallback in {"imf", "wb"}:
+            return fallback
+        return "imf"
+
+    def _resolve_gdp_metric_key(self, metric: Any, fallback: str | None) -> str:
+        resolved = self._parse_gdp_metric_key(metric)
+        if resolved is not None:
+            return resolved
+        if fallback in {"nominal", "ppp"}:
+            return fallback
+        return "nominal"
+
+    def _parse_gdp_source_key(self, source: Any) -> str | None:
+        resolved = normalize_lookup_key(str(source)) if source is not None else ""
+        if resolved == "imf":
+            return "imf"
+        if resolved in {"wb", "worldbank"}:
+            return "wb"
+        return None
+
+    def _parse_gdp_metric_key(self, metric: Any) -> str | None:
+        resolved = normalize_lookup_key(str(metric)) if metric is not None else ""
+        if resolved in {"nominal", "ppp"}:
+            return resolved
+        return None
+
+    def _format_gdp_table_title(self, table: dict[str, Any]) -> str | None:
+        base_title = self._as_optional_text(table.get("title")) or "GDP table"
+        source_key = self._resolve_gdp_source_key(table.get("source"), None)
+        metric_key = self._resolve_gdp_metric_key(table.get("metric"), None)
+
+        source_label = "IMF" if source_key == "imf" else "WB"
+        metric_label = "PPP GDP" if metric_key == "ppp" else "Nominal GDP"
+
+        return f"{base_title} | Source: {source_label} | Metric: {metric_label}"
 
     async def _build_country_source_index(
         self,
